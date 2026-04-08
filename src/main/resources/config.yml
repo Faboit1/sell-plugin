@@ -1,0 +1,29 @@
+# ========================================== #
+#             SELL PLUGIN CONFIG             #
+# ========================================== #
+
+# The amount the multiplier increases per 1 item sold in a category.
+# Example: 0.001 means selling 1000 items gives a +1.0x bonus (Total 2.0x multiplier)
+multiplier-step: 0.001
+
+# GUI Settings
+gui:
+  title: "&8&lSell Menu"
+  size: 27
+  sell-all-slot: 13
+  sell-all-item: "EMERALD_BLOCK"
+  sell-all-name: "&a&lSell All Items"
+  sell-all-lore:
+    - "&7Click to sell all sellable items"
+    - "&7in your inventory."
+    - ""
+    - "&eYour current Multipliers:"
+    - "{multipliers}"
+
+# Messages
+messages:
+  prefix: "&8[&aSellPlugin&8] "
+  no-permission: "&cYou do not have permission for this."
+  sold-items: "&aYou sold &e{amount} &aitems for &e${price}&a!"
+  nothing-to-sell: "&cYou have no sellable items in your inventory."
+  economy-error: "&cAn economy error occurred. Please contact an admin."

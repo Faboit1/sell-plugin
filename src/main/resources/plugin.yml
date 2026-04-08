@@ -1,0 +1,9 @@
+name: SellPlugin
+version: 1.0
+main: com.yourname.sellplugin.SellPlugin
+api-version: 1.13
+softdepend: [Vault, CoinsEngine]
+commands:
+  sell:
+    description: Opens the sell menu.
+    aliases: [sellmenu, sellgui]

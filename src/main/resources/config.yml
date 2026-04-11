@@ -20,6 +20,10 @@ gui:
     - "&eYour current Multipliers:"
     - "{multipliers}"
 
+
+economy-mode: VAULT
+coinsengine-currency-id: coins
+
 # Messages
 messages:
   prefix: "&8[&aSellPlugin&8] "

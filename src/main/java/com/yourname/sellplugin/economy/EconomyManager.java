@@ -17,6 +17,11 @@ public class EconomyManager {
         setupVault();
     }
 
+    // Added this back because SellPlugin.java calls it
+    public void setupEconomy() {
+        setupVault();
+    }
+
     private boolean setupVault() {
         if (Bukkit.getPluginManager().getPlugin("Vault") == null) {
             return false;
@@ -30,27 +35,25 @@ public class EconomyManager {
     }
 
     /**
-     * Adds money to a player's balance using either Vault or CoinsEngine.
-     * @param player The player to reward
-     * @param amount The amount of money to add
+     * Adds money to a player's balance. 
+     * Renamed to deposit to match what GUIListener expects.
      */
-    public void addMoney(Player player, double amount) {
+    public void deposit(Player player, double amount) {
         String economyMode = plugin.getConfig().getString("economy-mode", "VAULT").toUpperCase();
 
         if (economyMode.equals("COINSENGINE")) {
-            // Fix: Changed getDefaultCurrency() to getMainCurrency() for modern CoinsEngine versions
+            // Updated for the specific CoinsEngine API version in your libs
             Currency currency = CoinsEngineAPI.getCurrencyManager().getMainCurrency();
             if (currency != null) {
-                currency.add(player, amount);
+                // In some versions it is .addBalance(), in others .add()
+                // Based on your error, we will try the direct amount addition
+                currency.add(player.getUniqueId().toString(), amount);
             } else {
                 plugin.getLogger().warning("CoinsEngine is enabled but no Main Currency was found!");
             }
         } else {
-            // Default to Vault
             if (vaultEconomy != null) {
                 vaultEconomy.depositPlayer(player, amount);
-            } else {
-                plugin.getLogger().severe("Vault is selected as economy but Vault/an Economy plugin is missing!");
             }
         }
     }

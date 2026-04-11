@@ -17,9 +17,15 @@ public class EconomyManager {
         setupVault();
     }
 
-    // Fix: Changed to boolean to stop 'void' type error in SellPlugin.java
+    /**
+     * Initializes the economy providers.
+     * Returns true if at least one provider is found.
+     */
     public boolean setupEconomy() {
-        return setupVault();
+        boolean vaultReady = setupVault();
+        boolean coinsEngineReady = Bukkit.getPluginManager().getPlugin("CoinsEngine") != null;
+        
+        return vaultReady || coinsEngineReady;
     }
 
     private boolean setupVault() {
@@ -42,15 +48,14 @@ public class EconomyManager {
         String economyMode = plugin.getConfig().getString("economy-mode", "VAULT").toUpperCase();
 
         if (economyMode.equals("COINSENGINE")) {
-            // Fix: In many CoinsEngine versions, the interface is ICurrency
-            // And the method is often getCurrency() or just using the API directly
-            ICurrency currency = CoinsEngineAPI.getCurrencyManager().getCurrency("money"); // Try "money" as default
+            // CoinsEngine 1.21.1 usually uses ICurrency via getCurrencyManager
+            ICurrency currency = CoinsEngineAPI.getCurrencyManager().getCurrency("money"); 
             if (currency == null) {
                 currency = CoinsEngineAPI.getCurrencyManager().getMainCurrency();
             }
             
             if (currency != null) {
-                // Fix: Using the modern addition method for CoinsEngine
+                // CoinsEngine .add() typically takes (Player, double)
                 currency.add(player, amount);
                 return true;
             } else {
@@ -58,6 +63,7 @@ public class EconomyManager {
                 return false;
             }
         } else {
+            // Default to Vault
             if (vaultEconomy != null) {
                 vaultEconomy.depositPlayer(player, amount);
                 return true;

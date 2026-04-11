@@ -6,7 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import su.nightexpress.coinsengine.api.CoinsEngineAPI;
-import su.nightexpress.coinsengine.api.currency.ICurrency;
+import su.nightexpress.coinsengine.api.currency.Currency;
 
 public class EconomyManager {
     private final SellPlugin plugin;
@@ -24,7 +24,7 @@ public class EconomyManager {
     public boolean setupEconomy() {
         boolean vaultReady = setupVault();
         boolean coinsEngineReady = Bukkit.getPluginManager().getPlugin("CoinsEngine") != null;
-        
+
         return vaultReady || coinsEngineReady;
     }
 
@@ -41,22 +41,27 @@ public class EconomyManager {
     }
 
     /**
-     * Adds money to a player's balance. 
+     * Adds money to a player's balance.
      * Returns true if successful.
      */
     public boolean deposit(Player player, double amount) {
         String economyMode = plugin.getConfig().getString("economy-mode", "VAULT").toUpperCase();
 
         if (economyMode.equals("COINSENGINE")) {
-            // CoinsEngine 1.21.1 usually uses ICurrency via getCurrencyManager
-            ICurrency currency = CoinsEngineAPI.getCurrencyManager().getCurrency("money"); 
-            if (currency == null) {
-                currency = CoinsEngineAPI.getCurrencyManager().getMainCurrency();
+            if (Bukkit.getPluginManager().getPlugin("CoinsEngine") == null) {
+                plugin.getLogger().warning("CoinsEngine not found!");
+                return false;
             }
-            
+
+            // NEW API (no ICurrency)
+            Currency currency = CoinsEngineAPI.getCurrency("money");
+
+            if (currency == null) {
+                currency = CoinsEngineAPI.getDefaultCurrency(); // fallback
+            }
+
             if (currency != null) {
-                // CoinsEngine .add() typically takes (Player, double)
-                currency.add(player, amount);
+                CoinsEngineAPI.addBalance(player, currency, amount);
                 return true;
             } else {
                 plugin.getLogger().warning("CoinsEngine is enabled but no Currency was found!");

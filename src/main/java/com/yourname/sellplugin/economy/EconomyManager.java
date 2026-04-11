@@ -5,54 +5,53 @@ import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
-
-// Note: To compile this cleanly with both dependencies without errors,
-// Ensure you have VaultAPI and CoinsEngineAPI in your build path.
 import su.nightexpress.coinsengine.api.CoinsEngineAPI;
 import su.nightexpress.coinsengine.api.currency.Currency;
 
 public class EconomyManager {
     private final SellPlugin plugin;
-    private Economy vaultEcon = null;
-    private boolean useCoinsEngine = false;
+    private Economy vaultEconomy = null;
 
     public EconomyManager(SellPlugin plugin) {
         this.plugin = plugin;
+        setupVault();
     }
 
-    public boolean setupEconomy() {
-        if (Bukkit.getPluginManager().getPlugin("CoinsEngine") != null) {
-            useCoinsEngine = true;
-            plugin.getLogger().info("Successfully hooked into CoinsEngine!");
-            return true;
+    private boolean setupVault() {
+        if (Bukkit.getPluginManager().getPlugin("Vault") == null) {
+            return false;
         }
-
-        if (Bukkit.getPluginManager().getPlugin("Vault") != null) {
-            RegisteredServiceProvider<Economy> rsp = plugin.getServer().getServicesManager().getRegistration(Economy.class);
-            if (rsp != null) {
-                vaultEcon = rsp.getProvider();
-                plugin.getLogger().info("Successfully hooked into Vault!");
-                return true;
-            }
+        RegisteredServiceProvider<Economy> rsp = Bukkit.getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            return false;
         }
-        return false;
+        vaultEconomy = rsp.getProvider();
+        return vaultEconomy != null;
     }
 
-    public boolean deposit(Player player, double amount) {
-        try {
-            if (useCoinsEngine) {
-                Currency currency = CoinsEngineAPI.getCurrencyManager().getDefaultCurrency();
-                if (currency != null) {
-                    CoinsEngineAPI.addBalance(player, currency, amount);
-                    return true;
-                }
-            } else if (vaultEcon != null) {
-                return vaultEcon.depositPlayer(player, amount).transactionSuccess();
+    /**
+     * Adds money to a player's balance using either Vault or CoinsEngine.
+     * @param player The player to reward
+     * @param amount The amount of money to add
+     */
+    public void addMoney(Player player, double amount) {
+        String economyMode = plugin.getConfig().getString("economy-mode", "VAULT").toUpperCase();
+
+        if (economyMode.equals("COINSENGINE")) {
+            // Fix: Changed getDefaultCurrency() to getMainCurrency() for modern CoinsEngine versions
+            Currency currency = CoinsEngineAPI.getCurrencyManager().getMainCurrency();
+            if (currency != null) {
+                currency.add(player, amount);
+            } else {
+                plugin.getLogger().warning("CoinsEngine is enabled but no Main Currency was found!");
             }
-        } catch (Exception e) {
-            plugin.getLogger().severe("Failed to process economy transaction for " + player.getName() + "!");
-            e.printStackTrace();
+        } else {
+            // Default to Vault
+            if (vaultEconomy != null) {
+                vaultEconomy.depositPlayer(player, amount);
+            } else {
+                plugin.getLogger().severe("Vault is selected as economy but Vault/an Economy plugin is missing!");
+            }
         }
-        return false;
     }
 }

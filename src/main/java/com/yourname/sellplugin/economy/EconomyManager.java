@@ -6,7 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import su.nightexpress.coinsengine.api.CoinsEngineAPI;
-import su.nightexpress.coinsengine.api.currency.Currency;
+import su.nightexpress.coinsengine.api.currency.ICurrency;
 
 public class EconomyManager {
     private final SellPlugin plugin;
@@ -17,9 +17,9 @@ public class EconomyManager {
         setupVault();
     }
 
-    // Added this back because SellPlugin.java calls it
-    public void setupEconomy() {
-        setupVault();
+    // Fix: Changed to boolean to stop 'void' type error in SellPlugin.java
+    public boolean setupEconomy() {
+        return setupVault();
     }
 
     private boolean setupVault() {
@@ -36,25 +36,33 @@ public class EconomyManager {
 
     /**
      * Adds money to a player's balance. 
-     * Renamed to deposit to match what GUIListener expects.
+     * Returns true if successful.
      */
-    public void deposit(Player player, double amount) {
+    public boolean deposit(Player player, double amount) {
         String economyMode = plugin.getConfig().getString("economy-mode", "VAULT").toUpperCase();
 
         if (economyMode.equals("COINSENGINE")) {
-            // Updated for the specific CoinsEngine API version in your libs
-            Currency currency = CoinsEngineAPI.getCurrencyManager().getMainCurrency();
+            // Fix: In many CoinsEngine versions, the interface is ICurrency
+            // And the method is often getCurrency() or just using the API directly
+            ICurrency currency = CoinsEngineAPI.getCurrencyManager().getCurrency("money"); // Try "money" as default
+            if (currency == null) {
+                currency = CoinsEngineAPI.getCurrencyManager().getMainCurrency();
+            }
+            
             if (currency != null) {
-                // In some versions it is .addBalance(), in others .add()
-                // Based on your error, we will try the direct amount addition
-                currency.add(player.getUniqueId().toString(), amount);
+                // Fix: Using the modern addition method for CoinsEngine
+                currency.add(player, amount);
+                return true;
             } else {
-                plugin.getLogger().warning("CoinsEngine is enabled but no Main Currency was found!");
+                plugin.getLogger().warning("CoinsEngine is enabled but no Currency was found!");
+                return false;
             }
         } else {
             if (vaultEconomy != null) {
                 vaultEconomy.depositPlayer(player, amount);
+                return true;
             }
+            return false;
         }
     }
 }

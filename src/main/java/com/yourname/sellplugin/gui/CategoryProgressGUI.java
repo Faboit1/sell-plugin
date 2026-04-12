@@ -103,10 +103,13 @@ public class CategoryProgressGUI implements InventoryHolder {
     // ── Progress bar helpers ─────────────────────────────────────────────────
 
     private void buildProgressBar(double currentMultiplier, double maxMultiplier) {
-        // Clamp progress between 0.0 and 1.0
-        double clamped = Math.max(0.0, Math.min(1.0,
-                (currentMultiplier - 1.0) / (maxMultiplier - 1.0)));
-        int filled = (int) Math.round(clamped * 9);
+        // Guard against division by zero if maxMultiplier == 1.0
+        int filled = 0;
+        if (maxMultiplier > 1.0) {
+            double clamped = Math.max(0.0, Math.min(1.0,
+                    (currentMultiplier - 1.0) / (maxMultiplier - 1.0)));
+            filled = (int) Math.round(clamped * 9);
+        }
 
         for (int i = 0; i < 9; i++) {
             boolean isFilled = i < filled;

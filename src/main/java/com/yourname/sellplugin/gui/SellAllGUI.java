@@ -65,6 +65,11 @@ public class SellAllGUI implements InventoryHolder {
         }
 
         int slot = Math.min(sellAllSlot, inv.getSize() - 1);
+        if (sellAllSlot >= inv.getSize()) {
+            plugin.getLogger().warning("sell-all-gui.slot (" + sellAllSlot
+                    + ") exceeds inventory size (" + inv.getSize()
+                    + "). Placing button at slot " + slot + ".");
+        }
         inv.setItem(slot, makeItem(mat, cfg.getSellAllName(), lore));
     }
 

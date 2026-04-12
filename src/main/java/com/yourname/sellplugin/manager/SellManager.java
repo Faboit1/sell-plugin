@@ -12,6 +12,8 @@ import java.util.Map;
 
 public class SellManager {
 
+    private static final String FALLBACK_SOUND = "ENTITY_EXPERIENCE_ORB_PICKUP";
+
     private final SellPlugin plugin;
 
     public SellManager(SellPlugin plugin) {
@@ -187,7 +189,7 @@ public class SellManager {
                 Sound sound = Sound.valueOf(soundName);
                 player.playSound(player.getLocation(), sound, 1.0f, 1.2f);
             } catch (IllegalArgumentException ignored) {
-                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.2f);
+                player.playSound(player.getLocation(), Sound.valueOf(FALLBACK_SOUND), 1.0f, 1.2f);
             }
         }
 

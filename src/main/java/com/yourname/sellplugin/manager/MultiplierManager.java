@@ -74,6 +74,12 @@ public class MultiplierManager {
         return 1.0 + (itemsSold * step);
     }
 
+    public int getTotalSold(Player p, String category) {
+        if (!cache.containsKey(p.getUniqueId())) loadPlayer(p.getUniqueId());
+        Map<String, Integer> stats = cache.get(p.getUniqueId());
+        return stats.getOrDefault(category, 0);
+    }
+
     public void addSales(Player p, String category, int amount) {
         if (!cache.containsKey(p.getUniqueId())) loadPlayer(p.getUniqueId());
         

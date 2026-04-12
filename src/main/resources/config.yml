@@ -6,7 +6,76 @@
 # Example: 0.001 means selling 1000 items gives a +1.0x bonus (Total 2.0x multiplier)
 multiplier-step: 0.001
 
-# GUI Settings
+# Items sold per bar segment in the progress bar GUI (9 segments total)
+# Example: 100 means each segment represents 100 items sold
+progress-bar-items-per-segment: 100
+
+# ---- Main Category GUI (/sell command) ----
+category-gui:
+  title: "&8&lSell Menu"
+  # Icons for the 9 category buttons (must match price.yml category names)
+  categories:
+    armortools:
+      display-name: "&6&lArmor & Tools"
+      icon: "DIAMOND_SWORD"
+      lore:
+        - "&7Click to view armor and tools"
+    blocks:
+      display-name: "&a&lBlocks"
+      icon: "GRASS_BLOCK"
+      lore:
+        - "&7Click to view blocks"
+    crops:
+      display-name: "&e&lCrops"
+      icon: "WHEAT"
+      lore:
+        - "&7Click to view crops"
+    enchantedbooks:
+      display-name: "&9&lEnchanted Books"
+      icon: "ENCHANTED_BOOK"
+      lore:
+        - "&7Click to view enchanted books"
+    fish:
+      display-name: "&b&lFish"
+      icon: "COD"
+      lore:
+        - "&7Click to view fish"
+    mobdrops:
+      display-name: "&c&lMob Drops"
+      icon: "ROTTEN_FLESH"
+      lore:
+        - "&7Click to view mob drops"
+    naturalitems:
+      display-name: "&2&lNatural Items"
+      icon: "OAK_LOG"
+      lore:
+        - "&7Click to view natural items"
+    ores:
+      display-name: "&b&lOres & Minerals"
+      icon: "DIAMOND_ORE"
+      lore:
+        - "&7Click to view ores and minerals"
+    potions:
+      display-name: "&d&lPotions"
+      icon: "POTION"
+      lore:
+        - "&7Click to view potions"
+
+# ---- /sellall command GUI ----
+sellall-gui:
+  title: "&8&lSell All"
+  size: 27
+  sell-all-slot: 13
+  sell-all-item: "EMERALD_BLOCK"
+  sell-all-name: "&a&lSell All Items"
+  sell-all-lore:
+    - "&7Click to sell all sellable items"
+    - "&7in your inventory."
+    - ""
+    - "&eYour current Multipliers:"
+    - "{multipliers}"
+
+# Legacy GUI settings (kept for backwards compatibility)
 gui:
   title: "&8&lSell Menu"
   size: 27
@@ -20,9 +89,18 @@ gui:
     - "&eYour current Multipliers:"
     - "{multipliers}"
 
-
 economy-mode: VAULT
 coinsengine-currency-id: coins
+
+# Whether to show the prefix in chat messages (true/false)
+prefix-enabled: true
+
+# Whether to display sell earnings in the action bar (true/false)
+action-bar-enabled: true
+
+# Whether to play a sound when selling items
+sounds-enabled: true
+sound-type: "ENTITY_PLAYER_LEVELUP"
 
 # Messages
 messages:

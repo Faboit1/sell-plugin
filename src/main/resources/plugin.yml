@@ -5,5 +5,15 @@ api-version: 1.13
 softdepend: [Vault, CoinsEngine]
 commands:
   sell:
-    description: Opens the sell menu.
+    description: Opens the sell category menu.
     aliases: [sellmenu, sellgui]
+  sellall:
+    description: Opens the quick sell-all menu.
+    aliases: [quicksell]
+permissions:
+  sellplugin.use:
+    description: Allows the player to use /sell
+    default: true
+  sellplugin.sellall:
+    description: Allows the player to use /sellall
+    default: true

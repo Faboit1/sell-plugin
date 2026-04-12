@@ -1,16 +1,19 @@
 package com.yourname.sellplugin.command;
 
 import com.yourname.sellplugin.SellPlugin;
-import com.yourname.sellplugin.gui.CategoryGUI;
+import com.yourname.sellplugin.gui.SellGUI;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class SellCommand implements CommandExecutor {
+/**
+ * /sellall command – opens the quick sell-all GUI (single button, configurable block).
+ */
+public class SellAllCommand implements CommandExecutor {
     private final SellPlugin plugin;
 
-    public SellCommand(SellPlugin plugin) {
+    public SellAllCommand(SellPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -23,14 +26,13 @@ public class SellCommand implements CommandExecutor {
 
         Player player = (Player) sender;
 
-        if (!player.hasPermission("sellplugin.use")) {
+        if (!player.hasPermission("sellplugin.sellall")) {
             player.sendMessage(plugin.getConfigManager().getMessage("no-permission"));
             return true;
         }
 
-        CategoryGUI gui = new CategoryGUI(plugin, player);
+        SellGUI gui = new SellGUI(plugin, player);
         gui.open(player);
-
         return true;
     }
 }

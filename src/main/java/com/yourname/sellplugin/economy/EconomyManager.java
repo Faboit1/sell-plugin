@@ -3,7 +3,6 @@ package com.yourname.sellplugin.economy;
 import com.yourname.sellplugin.SellPlugin;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import su.nightexpress.coinsengine.api.CoinsEngineAPI;
@@ -43,17 +42,10 @@ public class EconomyManager {
     }
 
     private Currency getCoinsEngineCurrency() {
-        FileConfiguration config = plugin.getConfig();
-
-        // Set this in config.yml, for example:
-        // economy-mode: VAULT
-        // coinsengine-currency-id: coins
-        String currencyId = config.getString("coinsengine-currency-id", "coins");
-
+        String currencyId = plugin.getConfigManager().getCoinsEngineCurrencyId();
         if (currencyId == null || currencyId.isBlank()) {
             currencyId = "coins";
         }
-
         return CoinsEngineAPI.getCurrency(currencyId);
     }
 
@@ -62,7 +54,7 @@ public class EconomyManager {
      * Returns true if successful.
      */
     public boolean deposit(Player player, double amount) {
-        String economyMode = plugin.getConfig().getString("economy-mode", "VAULT").toUpperCase();
+        String economyMode = plugin.getConfigManager().getEconomyMode();
 
         if (economyMode.equals("COINSENGINE")) {
             if (Bukkit.getPluginManager().getPlugin("CoinsEngine") == null) {

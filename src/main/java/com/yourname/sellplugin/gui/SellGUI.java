@@ -20,8 +20,8 @@ public class SellGUI implements InventoryHolder {
 
     public SellGUI(SellPlugin plugin, Player player) {
         this.plugin = plugin;
-        String title = plugin.getConfigManager().getGuiTitle();
-        int size = plugin.getConfigManager().getGuiSize();
+        String title = plugin.getConfigManager().getSellAllGuiTitle();
+        int size = plugin.getConfigManager().getSellAllGuiSize();
         
         this.inv = Bukkit.createInventory(this, size, title);
         
@@ -29,6 +29,17 @@ public class SellGUI implements InventoryHolder {
     }
 
     private void setupItems(Player player) {
+        // Fill with glass panes
+        ItemStack filler = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta fillerMeta = filler.getItemMeta();
+        if (fillerMeta != null) {
+            fillerMeta.setDisplayName(" ");
+            filler.setItemMeta(fillerMeta);
+        }
+        for (int i = 0; i < inv.getSize(); i++) {
+            inv.setItem(i, filler);
+        }
+
         int slot = plugin.getConfigManager().getSellAllSlot();
         Material mat = Material.matchMaterial(plugin.getConfigManager().getSellAllMaterial());
         if (mat == null) mat = Material.EMERALD_BLOCK;

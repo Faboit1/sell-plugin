@@ -1,16 +1,16 @@
 package com.yourname.sellplugin.command;
 
 import com.yourname.sellplugin.SellPlugin;
-import com.yourname.sellplugin.gui.ShopMainGUI;
+import com.yourname.sellplugin.gui.SellAllGUI;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class SellCommand implements CommandExecutor {
+public class SellAllCommand implements CommandExecutor {
     private final SellPlugin plugin;
 
-    public SellCommand(SellPlugin plugin) {
+    public SellAllCommand(SellPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -26,7 +26,7 @@ public class SellCommand implements CommandExecutor {
             return true;
         }
 
-        new ShopMainGUI(plugin, player).open(player);
+        new SellAllGUI(plugin, player).open(player);
         return true;
     }
 }

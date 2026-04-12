@@ -1,103 +1,143 @@
 package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
-import org.bukkit.Material;
+import com.yourname.sellplugin.manager.SellManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.bukkit.inventory.InventoryHolder;
 
 public class GUIListener implements Listener {
+
     private final SellPlugin plugin;
 
     public GUIListener(SellPlugin plugin) {
         this.plugin = plugin;
     }
 
-    // ANTI-DUPE: We cancel ALL drags if the top inventory is our GUI.
+    // Cancel all drags while any of our GUIs are open
     @EventHandler
     public void onDrag(InventoryDragEvent e) {
-        if (e.getView().getTopInventory().getHolder() instanceof SellGUI) {
+        InventoryHolder holder = e.getView().getTopInventory().getHolder();
+        if (holder instanceof ShopMainGUI
+                || holder instanceof CategoryProgressGUI
+                || holder instanceof CategoryItemsGUI
+                || holder instanceof SellAllGUI) {
             e.setCancelled(true);
         }
     }
 
-    // ANTI-DUPE: We cancel ALL clicks if the GUI is open.
     @EventHandler
     public void onClick(InventoryClickEvent e) {
-        // Check if the inventory they are viewing is our GUI
-        if (e.getView().getTopInventory().getHolder() instanceof SellGUI) {
-            e.setCancelled(true); // Cancels the click entirely so no items can move
+        if (!(e.getWhoClicked() instanceof Player)) return;
+        Player player = (Player) e.getWhoClicked();
 
-            // We only care if they clicked the exact inventory, not their own bottom inventory
-            if (e.getClickedInventory() != null && e.getClickedInventory().getHolder() instanceof SellGUI) {
-                if (e.getSlot() == plugin.getConfigManager().getSellAllSlot()) {
-                    Player p = (Player) e.getWhoClicked();
-                    processSellAll(p);
-                    p.closeInventory();
+        InventoryHolder holder = e.getView().getTopInventory().getHolder();
+
+        // ── ShopMainGUI ──────────────────────────────────────────────────────
+        if (holder instanceof ShopMainGUI shopGUI) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() == null
+                    || !(e.getClickedInventory().getHolder() instanceof ShopMainGUI)) return;
+
+            int slot = e.getSlot();
+
+            // Sell All button
+            if (shopGUI.isSellAllSlot(slot)) {
+                player.closeInventory();
+                SellManager.SellResult result = plugin.getSellManager().sellAll(player);
+                if (!result.success && result.earned == 0 && result.itemsSold == 0) {
+                    // nothing-to-sell already sent inside SellManager
                 }
+                return;
             }
-        }
-    }
 
-    private void processSellAll(Player p) {
-        Inventory pInv = p.getInventory();
-        double totalEarned = 0.0;
-        int totalItemsSold = 0;
-        
-        // Track how many of each category we sold to batch-save stats at the end
-        Map<String, Integer> categorySales = new HashMap<>();
-
-        for (int i = 0; i < pInv.getSize(); i++) {
-            ItemStack item = pInv.getItem(i);
-            if (item == null || item.getType() == Material.AIR) continue;
-
-            String itemKey = plugin.getPriceManager().getItemKey(item);
-            if (itemKey == null) continue;
-
-            double basePrice = plugin.getPriceManager().getPrice(itemKey);
-            
-            if (basePrice > 0) {
-                String category = plugin.getPriceManager().getCategory(itemKey);
-                double multiplier = plugin.getMultiplierManager().getMultiplier(p, category);
-                
-                int amount = item.getAmount();
-                double finalPrice = (basePrice * multiplier) * amount;
-
-                totalEarned += finalPrice;
-                totalItemsSold += amount;
-                
-                categorySales.put(category, categorySales.getOrDefault(category, 0) + amount);
-                
-                // Remove item securely
-                pInv.setItem(i, null);
+            // Category button (bottom row 36-44)
+            String catId = shopGUI.getCategoryAtSlot(slot);
+            if (catId != null) {
+                new CategoryProgressGUI(plugin, player, catId).open(player);
             }
+            return;
         }
 
-        if (totalEarned > 0) {
-            // Apply money
-            boolean success = plugin.getEconomyManager().deposit(p, totalEarned);
-            if (success) {
-                // Update Multipliers only if economy transaction succeeded
-                for (Map.Entry<String, Integer> entry : categorySales.entrySet()) {
-                    plugin.getMultiplierManager().addSales(p, entry.getKey(), entry.getValue());
-                }
-                
-                String msg = plugin.getConfigManager().getMessage("sold-items")
-                        .replace("{amount}", String.valueOf(totalItemsSold))
-                        .replace("{price}", String.format("%.2f", totalEarned));
-                p.sendMessage(msg);
-            } else {
-                p.sendMessage(plugin.getConfigManager().getMessage("economy-error"));
+        // ── CategoryProgressGUI ──────────────────────────────────────────────
+        if (holder instanceof CategoryProgressGUI catProgressGUI) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() == null
+                    || !(e.getClickedInventory().getHolder() instanceof CategoryProgressGUI)) return;
+
+            int slot = e.getSlot();
+
+            if (slot == CategoryProgressGUI.SLOT_BACK) {
+                new ShopMainGUI(plugin, player).open(player);
+                return;
             }
-        } else {
-            p.sendMessage(plugin.getConfigManager().getMessage("nothing-to-sell"));
+
+            if (slot == CategoryProgressGUI.SLOT_VIEW_ITEMS) {
+                new CategoryItemsGUI(plugin, player, catProgressGUI.getCategoryId(), 0).open(player);
+                return;
+            }
+
+            if (slot == CategoryProgressGUI.SLOT_SELL_CAT) {
+                player.closeInventory();
+                plugin.getSellManager().sellCategory(player, catProgressGUI.getCategoryId());
+                return;
+            }
+            return;
+        }
+
+        // ── CategoryItemsGUI ─────────────────────────────────────────────────
+        if (holder instanceof CategoryItemsGUI catItemsGUI) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() == null
+                    || !(e.getClickedInventory().getHolder() instanceof CategoryItemsGUI)) return;
+
+            int slot = e.getSlot();
+
+            if (slot == CategoryItemsGUI.SLOT_BACK) {
+                new CategoryProgressGUI(plugin, player, catItemsGUI.getCategoryId()).open(player);
+                return;
+            }
+
+            if (slot == CategoryItemsGUI.SLOT_PREV && catItemsGUI.hasPrevPage()) {
+                catItemsGUI.prevPage().open(player);
+                return;
+            }
+
+            if (slot == CategoryItemsGUI.SLOT_NEXT && catItemsGUI.hasNextPage()) {
+                catItemsGUI.nextPage().open(player);
+                return;
+            }
+
+            if (slot == CategoryItemsGUI.SLOT_SELL_ALL) {
+                player.closeInventory();
+                plugin.getSellManager().sellCategory(player, catItemsGUI.getCategoryId());
+                return;
+            }
+
+            // Item click (slots 0-44) – sell all of that item type
+            String itemKey = catItemsGUI.getItemKeyAtSlot(slot);
+            if (itemKey != null) {
+                plugin.getSellManager().sellItemType(player, itemKey);
+                // Refresh the GUI to show updated counts
+                new CategoryItemsGUI(plugin, player, catItemsGUI.getCategoryId(),
+                        catItemsGUI.getPage()).open(player);
+            }
+            return;
+        }
+
+        // ── SellAllGUI ───────────────────────────────────────────────────────
+        if (holder instanceof SellAllGUI sellAllGUI) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() == null
+                    || !(e.getClickedInventory().getHolder() instanceof SellAllGUI)) return;
+
+            if (e.getSlot() == sellAllGUI.getSellAllSlot()) {
+                player.closeInventory();
+                plugin.getSellManager().sellAll(player);
+            }
         }
     }
 }

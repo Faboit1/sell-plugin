@@ -1,9 +1,21 @@
 name: SellPlugin
-version: 1.0
+version: 2.0.0
 main: com.yourname.sellplugin.SellPlugin
 api-version: 1.13
 softdepend: [Vault, CoinsEngine]
+
 commands:
   sell:
-    description: Opens the sell menu.
-    aliases: [sellmenu, sellgui]
+    description: Opens the category shop menu.
+    usage: /sell
+    aliases: [sellmenu, sellgui, shop]
+    permission: sellplugin.use
+  sellall:
+    description: Opens the quick sell-all GUI.
+    usage: /sellall
+    permission: sellplugin.use
+
+permissions:
+  sellplugin.use:
+    description: Allows a player to use the sell commands.
+    default: true

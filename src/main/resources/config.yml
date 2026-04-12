@@ -1,30 +1,126 @@
-# ========================================== #
-#             SELL PLUGIN CONFIG             #
-# ========================================== #
+# ============================================================ #
+#                   SELL PLUGIN CONFIG                         #
+# ============================================================ #
 
-# The amount the multiplier increases per 1 item sold in a category.
-# Example: 0.001 means selling 1000 items gives a +1.0x bonus (Total 2.0x multiplier)
+# How much the multiplier increases per 1 item sold in a category.
+# 0.001 = selling 1000 items gives +1.0x bonus (total 2.0x).
 multiplier-step: 0.001
 
-# GUI Settings
+# Maximum multiplier cap (used for progress bar display)
+max-multiplier: 5.0
+
+# ---- Prefix / Notifications -------------------------------- #
+
+# Show a chat prefix message after selling?
+# Set to false to only use the action bar notification.
+prefix-enabled: true
+
+# Play a sound when items are sold?
+sounds-enabled: true
+
+# Sound to play on sell (Bukkit Sound enum name)
+sound-type: "ENTITY_EXPERIENCE_ORB_PICKUP"
+
+# ---- Economy ----------------------------------------------- #
+
+# VAULT or COINSENGINE
+economy-mode: VAULT
+
+# CoinsEngine currency ID (only used if economy-mode: COINSENGINE)
+coinsengine-currency-id: coins
+
+# ---- Main Shop GUI (/sell) ---------------------------------- #
+# This opens the 9x5 category browsing menu.
+
 gui:
-  title: "&8&lSell Menu"
+  title: "&8&lShop"
+  size: 45
+
+# ---- Sell All GUI (/sellall) -------------------------------- #
+# Simple one-button GUI to sell everything in your inventory.
+
+sell-all-gui:
+  title: "&8&lSell All Items"
   size: 27
-  sell-all-slot: 13
-  sell-all-item: "EMERALD_BLOCK"
-  sell-all-name: "&a&lSell All Items"
-  sell-all-lore:
+  slot: 13
+  # Material of the sell-all button (change to any Minecraft block/item name)
+  item: "EMERALD_BLOCK"
+  name: "&a&lSell All Items"
+  lore:
     - "&7Click to sell all sellable items"
     - "&7in your inventory."
     - ""
     - "&eYour current Multipliers:"
     - "{multipliers}"
 
+# ---- Category order (bottom row of /sell GUI, left to right) #
+# These must match the top-level keys in price.yml.
+# Up to 9 entries shown.
+category-order:
+  - armortools
+  - blocks
+  - crops
+  - enchantedbooks
+  - fish
+  - mobdrops
+  - naturalitems
+  - ores
+  - potions
 
-economy-mode: VAULT
-coinsengine-currency-id: coins
+# ---- Category display settings ------------------------------ #
+# Customise the icon and name shown for each category button.
+# 'material' must be a valid Minecraft item name.
 
-# Messages
+categories:
+  armortools:
+    display-name: "&6Armor & Tools"
+    material: "DIAMOND_SWORD"
+    lore:
+      - "&7Sell your armor, weapons,"
+      - "&7and tools."
+  blocks:
+    display-name: "&7Blocks"
+    material: "STONE"
+    lore:
+      - "&7Sell building blocks."
+  crops:
+    display-name: "&aFarming"
+    material: "WHEAT"
+    lore:
+      - "&7Sell crops and farm produce."
+  enchantedbooks:
+    display-name: "&5Enchanted Books"
+    material: "ENCHANTED_BOOK"
+    lore:
+      - "&7Sell enchanted books."
+  fish:
+    display-name: "&bFishing"
+    material: "COD"
+    lore:
+      - "&7Sell fish and fishing loot."
+  mobdrops:
+    display-name: "&cMob Drops"
+    material: "BONE"
+    lore:
+      - "&7Sell mob loot and drops."
+  naturalitems:
+    display-name: "&2Nature"
+    material: "OAK_LOG"
+    lore:
+      - "&7Sell logs, leaves, and"
+      - "&7other natural items."
+  ores:
+    display-name: "&eOres & Gems"
+    material: "IRON_ORE"
+    lore:
+      - "&7Sell ores and precious gems."
+  potions:
+    display-name: "&dPotions"
+    material: "POTION"
+    lore:
+      - "&7Sell potions and brewed items."
+
+# ---- Messages ---------------------------------------------- #
 messages:
   prefix: "&8[&aSellPlugin&8] "
   no-permission: "&cYou do not have permission for this."

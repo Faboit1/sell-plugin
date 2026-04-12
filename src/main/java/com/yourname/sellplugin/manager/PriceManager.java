@@ -82,4 +82,9 @@ public class PriceManager {
     public Set<String> getCategories() {
         return categories;
     }
+
+    /** Returns all loaded item keys (e.g. "DIAMOND", "LINGERING_POTION:NIGHT_VISION"). */
+    public Set<String> getAllItemKeys() {
+        return prices.keySet();
+    }
 }

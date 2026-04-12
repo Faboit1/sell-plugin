@@ -20,7 +20,9 @@ public class CategoryGUI {
     }
 
     public void open() {
-        Inventory inventory = Bukkit.createInventory(null, GUI_SIZE, ChatColor.GOLD + ChatColor.BOLD + "Sell Menu");
+        String title = ChatColor.GOLD.toString() + ChatColor.BOLD.toString() + "Sell Menu";
+        Inventory inventory = Bukkit.createInventory(null, GUI_SIZE, title);
+
         List<CategoryData> categories = Arrays.asList(
             new CategoryData("Ores", Material.IRON_ORE),
             new CategoryData("Logs", Material.OAK_LOG),

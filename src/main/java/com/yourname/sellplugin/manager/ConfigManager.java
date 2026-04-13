@@ -16,12 +16,46 @@ public class ConfigManager {
     }
 
     // ---- Multiplier -------------------------------------------------------
-    public double getMultiplierStep() {
-        return plugin.getConfig().getDouble("multiplier-step", 0.001);
+    /** Cost (in money earned) to unlock the very first multiplier level (1.1x). */
+    public double getStartMultiplier() {
+        return plugin.getConfig().getDouble("start-multiplier", 1000.0);
+    }
+
+    /**
+     * Geometric factor: each subsequent milestone costs
+     * (previous milestone cost × this value).
+     */
+    public double getMultiplierFactor() {
+        return plugin.getConfig().getDouble("multiplier", 1.6);
     }
 
     public double getMaxMultiplier() {
-        return plugin.getConfig().getDouble("max-multiplier", 5.0);
+        return plugin.getConfig().getDouble("max-multiplier", 3.0);
+    }
+
+    // ---- Progress bar colours ---------------------------------------------
+    public Material getProgressBarCompletedColor() {
+        return resolvePane(plugin.getConfig().getString(
+                "progress-bar.completed-color", "LIME_STAINED_GLASS_PANE"),
+                Material.LIME_STAINED_GLASS_PANE);
+    }
+
+    public Material getProgressBarInProgressColor() {
+        return resolvePane(plugin.getConfig().getString(
+                "progress-bar.inprogress-color", "YELLOW_STAINED_GLASS_PANE"),
+                Material.YELLOW_STAINED_GLASS_PANE);
+    }
+
+    public Material getProgressBarLockedColor() {
+        return resolvePane(plugin.getConfig().getString(
+                "progress-bar.locked-color", "GRAY_STAINED_GLASS_PANE"),
+                Material.GRAY_STAINED_GLASS_PANE);
+    }
+
+    private Material resolvePane(String name, Material fallback) {
+        if (name == null) return fallback;
+        Material mat = Material.matchMaterial(name);
+        return mat != null ? mat : fallback;
     }
 
     // ---- GUI (main shop menu) ---------------------------------------------
@@ -129,6 +163,42 @@ public class ConfigManager {
                 : "";
         String msg = plugin.getConfig().getString("messages." + path, "");
         return color(prefix + msg);
+    }
+
+    // ---- Icons ----------------------------------------------------------------
+    /**
+     * Returns the configured Material for an icon key, falling back to
+     * {@code fallback} if the key is absent or the material name is invalid.
+     *
+     * @param key      e.g. "back", "confirm", "prev-page"
+     * @param fallback default Material to use
+     */
+    public Material getIconMaterial(String key, Material fallback) {
+        String matName = plugin.getConfig().getString("icons." + key + ".material");
+        if (matName == null) return fallback;
+        Material mat = Material.matchMaterial(matName);
+        return mat != null ? mat : fallback;
+    }
+
+    /**
+     * Returns the colour-translated display name for an icon key.
+     * Falls back to {@code defaultName} (also colour-translated) if absent.
+     */
+    public String getIconName(String key, String defaultName) {
+        String name = plugin.getConfig().getString("icons." + key + ".name");
+        return color(name != null ? name : defaultName);
+    }
+
+    /**
+     * Returns the colour-translated lore lines for an icon key.
+     * Falls back to {@code defaultLore} (pre-coloured) if the list is empty.
+     */
+    public List<String> getIconLore(String key, List<String> defaultLore) {
+        List<String> raw = plugin.getConfig().getStringList("icons." + key + ".lore");
+        if (raw.isEmpty()) return defaultLore;
+        List<String> result = new ArrayList<>();
+        for (String line : raw) result.add(color(line));
+        return result;
     }
 
     // ---- Reload -----------------------------------------------------------

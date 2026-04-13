@@ -2,12 +2,22 @@
 #                   SELL PLUGIN CONFIG                         #
 # ============================================================ #
 
-# How much the multiplier increases per $1 earned in a category.
-# 0.001 = earning $1000 gives +1.0x bonus (total 2.0x).
-multiplier-step: 0.001
+# Money required to unlock the first multiplier level (1.1x).
+# Each subsequent level costs (previous cost × multiplier).
+# e.g. start-multiplier: 1000, multiplier: 1.6
+#   → 1.1x costs $1000, 1.2x costs $1600, 1.3x costs $2560 …
+start-multiplier: 1000.0
+multiplier: 1.6
 
 # Maximum multiplier cap (used for progress bar display)
 max-multiplier: 3.0
+
+# ---- Progress bar (snake path) colours ------------------------------------ #
+# Must be valid glass-pane Material names.
+progress-bar:
+  completed-color: "LIME_STAINED_GLASS_PANE"
+  inprogress-color: "YELLOW_STAINED_GLASS_PANE"
+  locked-color: "GRAY_STAINED_GLASS_PANE"
 
 # ---- Prefix / Notifications -------------------------------- #
 
@@ -127,6 +137,64 @@ categories:
     material: "POTION"
     lore:
       - "&7Sell potions and brewed items."
+
+# ---- GUI Icons --------------------------------------------- #
+# Customise every navigation / action icon used across all GUIs.
+# 'material' must be a valid Minecraft item name.
+# 'name' and each 'lore' line support & colour codes.
+
+icons:
+  # ── Shared navigation ──────────────────────────────────────────
+  back:
+    material: "ARROW"
+    name: "&c&lBack"
+    lore:
+      - "&7Return to the previous menu."
+
+  prev-page:
+    material: "ARROW"
+    name: "&e← Previous"
+    lore:
+      - "&7Go to the previous page."
+
+  next-page:
+    material: "ARROW"
+    name: "&eNext →"
+    lore:
+      - "&7Go to the next page."
+
+  page-indicator:
+    material: "PAPER"
+    # Name is generated dynamically as "Page X / Y".
+    # Only material is used from this entry.
+
+  # ── Confirm / Cancel ───────────────────────────────────────────
+  confirm:
+    material: "LIME_STAINED_GLASS_PANE"
+    name: "&a&lConfirm"
+
+  cancel:
+    material: "RED_STAINED_GLASS_PANE"
+    name: "&c&lCancel"
+    lore:
+      - "&7Go back without selling."
+
+  # ── Category Items GUI ─────────────────────────────────────────
+  sell-category:
+    material: "GOLD_INGOT"
+    name: "&a&lSell Category"
+
+  # ── Confirm Sell-All info icon ─────────────────────────────────
+  sell-all-info:
+    material: "CHEST"
+    name: "&f&lSell All"
+
+  # ── TopSell leaderboard ─────────────────────────────────────────
+  topsell-close:
+    material: "BARRIER"
+    name: "&c&lClose"
+    lore:
+      - "&7Close the leaderboard."
 
 # ---- Messages ---------------------------------------------- #
 messages:

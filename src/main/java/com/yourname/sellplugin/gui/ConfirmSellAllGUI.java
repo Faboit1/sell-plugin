@@ -53,27 +53,32 @@ public class ConfirmSellAllGUI implements InventoryHolder {
         infoLore.add(ChatColor.DARK_GRAY + "───────────────────");
         infoLore.add(ChatColor.GRAY + SmallCaps.convert("items: ") + ChatColor.WHITE + itemCount);
         infoLore.add(ChatColor.GRAY + SmallCaps.convert("value: ")
-                + ChatColor.GOLD + "$" + String.format("%.2f", value));
+                + ChatColor.GREEN + "$" + String.format("%.2f", value));
         infoLore.add(ChatColor.DARK_GRAY + "───────────────────");
 
-        inv.setItem(13, makeItem(Material.CHEST,
-                ChatColor.WHITE + "" + ChatColor.BOLD + SmallCaps.convert("sell all"), infoLore));
+        inv.setItem(13, makeItem(
+                cfg.getIconMaterial("sell-all-info", Material.CHEST),
+                cfg.getIconName("sell-all-info", "&f&l" + SmallCaps.convert("sell all")),
+                infoLore));
 
         // Confirm button
         List<String> confirmLore = new ArrayList<>();
         confirmLore.add(ChatColor.GRAY + SmallCaps.convert("sell all items from your inventory."));
         if (itemCount > 0) {
-            confirmLore.add(ChatColor.GREEN + SmallCaps.convert("you will earn: ")
-                    + ChatColor.GOLD + "$" + String.format("%.2f", value));
+            confirmLore.add(ChatColor.GREEN + SmallCaps.convert("you will earn: $") + String.format("%.2f", value));
         }
-        inv.setItem(SLOT_CONFIRM, makeItem(Material.LIME_STAINED_GLASS_PANE,
-                ChatColor.GREEN + "" + ChatColor.BOLD + SmallCaps.convert("confirm"), confirmLore));
+        inv.setItem(SLOT_CONFIRM, makeItem(
+                cfg.getIconMaterial("confirm", Material.LIME_STAINED_GLASS_PANE),
+                cfg.getIconName("confirm", "&a&l" + SmallCaps.convert("confirm")),
+                confirmLore));
 
         // Cancel button
-        List<String> cancelLore = new ArrayList<>();
-        cancelLore.add(ChatColor.GRAY + SmallCaps.convert("go back without selling."));
-        inv.setItem(SLOT_CANCEL, makeItem(Material.RED_STAINED_GLASS_PANE,
-                ChatColor.RED + "" + ChatColor.BOLD + SmallCaps.convert("cancel"), cancelLore));
+        List<String> cancelLore = cfg.getIconLore("cancel",
+                Collections.singletonList(ChatColor.GRAY + SmallCaps.convert("go back without selling.")));
+        inv.setItem(SLOT_CANCEL, makeItem(
+                cfg.getIconMaterial("cancel", Material.RED_STAINED_GLASS_PANE),
+                cfg.getIconName("cancel", "&c&l" + SmallCaps.convert("cancel")),
+                cancelLore));
     }
 
     private ItemStack makeItem(Material mat, String name, List<String> lore) {
@@ -96,3 +101,4 @@ public class ConfirmSellAllGUI implements InventoryHolder {
         p.openInventory(inv);
     }
 }
+

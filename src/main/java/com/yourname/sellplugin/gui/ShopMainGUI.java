@@ -63,16 +63,13 @@ public class ShopMainGUI implements InventoryHolder {
     private ItemStack buildCategoryButton(String catId) {
         ConfigManager cfg = plugin.getConfigManager();
 
-        int itemCount = plugin.getSellManager().countCategoryItems(player, catId);
         double value = plugin.getSellManager().calculateCategoryValue(player, catId);
         double multiplier = plugin.getMultiplierManager().getMultiplier(player, catId);
 
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "───────────────────");
-        lore.add(ChatColor.GRAY + SmallCaps.convert("items in inventory: ")
-                + ChatColor.WHITE + itemCount);
         lore.add(ChatColor.GRAY + SmallCaps.convert("value: ")
-                + ChatColor.GOLD + "$" + String.format("%.2f", value));
+                + ChatColor.GREEN + "$" + String.format("%.2f", value));
         lore.add(ChatColor.GRAY + SmallCaps.convert("multiplier: ")
                 + ChatColor.AQUA + String.format("%.2fx", multiplier));
         lore.add(ChatColor.DARK_GRAY + "───────────────────");

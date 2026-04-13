@@ -172,7 +172,7 @@ public class SellManager {
     }
 
     // ---------------------------------------------------------------
-    // Notification: action bar (always) + chat (if prefix-enabled)
+    // Notification: action bar (always) + title popup + chat (if prefix-enabled)
     // ---------------------------------------------------------------
     public void sendSellNotification(Player player, double amount, int itemCount) {
         String formatted = String.format("%.2f", amount);
@@ -181,6 +181,15 @@ public class SellManager {
         String actionBarText = ChatColor.GREEN + "+" + ChatColor.GOLD + "$" + formatted
                 + ChatColor.GRAY + " (" + itemCount + " items)";
         player.sendActionBar(actionBarText);
+
+        // Title notification: large green floating text
+        if (plugin.getConfigManager().isTitleNotificationEnabled()) {
+            player.sendTitle(
+                    ChatColor.GREEN + "+" + ChatColor.GOLD + "$" + formatted,
+                    ChatColor.GRAY + "You sold " + itemCount + " item" + (itemCount == 1 ? "" : "s"),
+                    10, 40, 20
+            );
+        }
 
         // Play sound if enabled
         String soundName = plugin.getConfigManager().getSoundType();

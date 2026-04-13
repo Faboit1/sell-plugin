@@ -71,6 +71,10 @@ public class ConfigManager {
         return plugin.getConfig().getString("sound-type", "ENTITY_EXPERIENCE_ORB_PICKUP");
     }
 
+    public boolean isTitleNotificationEnabled() {
+        return plugin.getConfig().getBoolean("title-notification-enabled", true);
+    }
+
     // ---- Economy ----------------------------------------------------------
     public String getEconomyMode() {
         return plugin.getConfig().getString("economy-mode", "VAULT").toUpperCase();

@@ -2,7 +2,6 @@ package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
-import com.yourname.sellplugin.manager.MultiplierManager;
 import com.yourname.sellplugin.util.SmallCaps;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -25,11 +24,11 @@ import java.util.List;
  *
  * Colour key:
  *   GREEN  – completed milestone
- *   YELLOW – current / in-progress milestone
+ *   YELLOW – current / in-progress milestone (shows money earned, required, %)
  *   GRAY   – locked / future milestone
  *
- * The very first node uses the category material (same icon as the
- * main menu) and is clickable to sell the category.
+ * The very first node opens the CategoryItemsGUI showing sellable items.
+ * The top category icon (slot 4) sells all items of that category (with confirm).
  *
  * All text uses small-capital Unicode letters.
  */
@@ -45,8 +44,8 @@ public class CategoryProgressGUI implements InventoryHolder {
     /** Back button slot (bottom-right area). */
     public static final int SLOT_BACK = 53;
 
-    /** Sell button = first path node (the category icon). */
-    public static final int SLOT_SELL_CAT = -1; // resolved dynamically via PATH
+    /** Category info icon at slot 4 – clicking sells category (with confirm). */
+    public static final int SLOT_CATEGORY_INFO = 4;
 
     /**
      * The 21-node snake path through the 54-slot grid.
@@ -97,15 +96,16 @@ public class CategoryProgressGUI implements InventoryHolder {
     private void populate() {
         ConfigManager cfg = plugin.getConfigManager();
 
-        // Fill everything with black glass background
-        ItemStack bg = makeItem(Material.BLACK_STAINED_GLASS_PANE, " ", Collections.emptyList());
+        // Fill everything with configurable filler block
+        Material fillerMat = cfg.getFillerBlock();
+        ItemStack bg = makeItem(fillerMat, " ", Collections.emptyList());
         for (int i = 0; i < SIZE; i++) inv.setItem(i, bg);
 
         // ── Category info icon at slot 4 (top-centre) ───────────────────────
         double mult = plugin.getMultiplierManager().getMultiplier(player, categoryId);
         int itemCount = plugin.getSellManager().countCategoryItems(player, categoryId);
         double value = plugin.getSellManager().calculateCategoryValue(player, categoryId);
-        int sold = getTotalSold();
+        double moneyEarned = plugin.getMultiplierManager().getMoneyEarned(player, categoryId);
 
         List<String> iconLore = new ArrayList<>();
         iconLore.add(ChatColor.DARK_GRAY + "───────────────────");
@@ -115,15 +115,23 @@ public class CategoryProgressGUI implements InventoryHolder {
                 + ChatColor.GOLD + "$" + String.format("%.2f", value));
         iconLore.add(ChatColor.GRAY + SmallCaps.convert("your multiplier: ")
                 + ChatColor.AQUA + String.format("%.2fx", mult));
-        iconLore.add(ChatColor.GRAY + SmallCaps.convert("total sold: ")
-                + ChatColor.WHITE + sold);
+        iconLore.add(ChatColor.GRAY + SmallCaps.convert("total earned: ")
+                + ChatColor.GOLD + "$" + String.format("%.2f", moneyEarned));
         iconLore.add(ChatColor.DARK_GRAY + "───────────────────");
+        if (itemCount > 0) {
+            iconLore.add(ChatColor.GREEN + SmallCaps.convert("click to sell all ")
+                    + ChatColor.WHITE + categoryId
+                    + ChatColor.GREEN + SmallCaps.convert(" items"));
+            iconLore.add(ChatColor.GREEN + SmallCaps.convert("from your inventory!"));
+        } else {
+            iconLore.add(ChatColor.RED + SmallCaps.convert("no sellable items found."));
+        }
 
-        inv.setItem(4, makeItem(cfg.getCategoryMaterial(categoryId),
+        inv.setItem(SLOT_CATEGORY_INFO, makeItem(cfg.getCategoryMaterial(categoryId),
                 cfg.getCategoryDisplayName(categoryId), iconLore));
 
         // ── Snake path ──────────────────────────────────────────────────────
-        buildSnakePath(mult);
+        buildSnakePath(mult, moneyEarned);
 
         // ── Back button (bottom-right) ──────────────────────────────────────
         List<String> backLore = new ArrayList<>();
@@ -136,7 +144,7 @@ public class CategoryProgressGUI implements InventoryHolder {
 
     // ── Snake / U-Path builder ───────────────────────────────────────────────
 
-    private void buildSnakePath(double currentMultiplier) {
+    private void buildSnakePath(double currentMultiplier, double moneyEarned) {
         ConfigManager cfg = plugin.getConfigManager();
 
         for (int i = 0; i < PATH.length; i++) {
@@ -179,32 +187,39 @@ public class CategoryProgressGUI implements InventoryHolder {
             lore.add(ChatColor.GRAY + SmallCaps.convert("status: ") + nameColour + status);
 
             if (isStart) {
+                // First node: show sellable items in category
                 lore.add(ChatColor.DARK_GRAY + "───────────────────");
-                int itemCount = plugin.getSellManager().countCategoryItems(player, categoryId);
-                if (itemCount > 0) {
-                    double sellValue = plugin.getSellManager().calculateCategoryValue(player, categoryId);
-                    lore.add(ChatColor.GREEN + SmallCaps.convert("click to sell ")
-                            + ChatColor.WHITE + itemCount
-                            + ChatColor.GREEN + SmallCaps.convert(" items"));
-                    lore.add(ChatColor.GREEN + SmallCaps.convert("earn: ")
-                            + ChatColor.GOLD + "$" + String.format("%.2f", sellValue));
-                } else {
-                    lore.add(ChatColor.RED + SmallCaps.convert("no sellable items found."));
+                lore.add(ChatColor.YELLOW + SmallCaps.convert("click to view items & prices"));
+            }
+
+            if (inProgress) {
+                // Show money earned, money required, and percentage for "in progress"
+                double step = cfg.getMultiplierStep();
+                if (step > 0) {
+                    double nextMilestone = milestone + 0.1;
+                    double moneyRequired = (nextMilestone - 1.0) / step;
+                    double percentage = Math.min(100.0, (moneyEarned / moneyRequired) * 100.0);
+
+                    lore.add(ChatColor.DARK_GRAY + "───────────────────");
+                    lore.add(ChatColor.GRAY + SmallCaps.convert("earned: ")
+                            + ChatColor.GOLD + "$" + String.format("%.2f", moneyEarned));
+                    lore.add(ChatColor.GRAY + SmallCaps.convert("required: ")
+                            + ChatColor.GOLD + "$" + String.format("%.2f", moneyRequired));
+                    lore.add(ChatColor.GRAY + SmallCaps.convert("progress: ")
+                            + ChatColor.YELLOW + String.format("%.1f%%", percentage));
                 }
             }
 
-            if (!completed && !isStart) {
-                // Show how many more items needed (rough estimate)
+            if (!completed && !isStart && !inProgress) {
+                // Show how much more money needed (locked nodes)
                 double step = cfg.getMultiplierStep();
                 if (step > 0) {
-                    double needed = (milestone - 1.0) / step;
-                    int totalNeeded = (int) Math.ceil(needed);
-                    int alreadySold = getTotalSold();
-                    int remaining = Math.max(0, totalNeeded - alreadySold);
+                    double moneyNeeded = (milestone - 1.0) / step;
+                    double remaining = Math.max(0, moneyNeeded - moneyEarned);
                     if (remaining > 0) {
-                        lore.add(ChatColor.GRAY + SmallCaps.convert("sell ")
-                                + ChatColor.WHITE + remaining
-                                + ChatColor.GRAY + SmallCaps.convert(" more items to unlock"));
+                        lore.add(ChatColor.GRAY + SmallCaps.convert("earn ")
+                                + ChatColor.GOLD + "$" + String.format("%.2f", remaining)
+                                + ChatColor.GRAY + SmallCaps.convert(" more to unlock"));
                     }
                 }
             }
@@ -215,19 +230,19 @@ public class CategoryProgressGUI implements InventoryHolder {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /** Returns the slot index of the first path node (the sell button). */
+    /** Returns the slot index of the first path node. */
     public int getSellSlot() {
         return PATH[0];
     }
 
-    /** Check whether a given slot is the first path node (sell slot). */
+    /** Check whether a given slot is the first path node. */
     public boolean isSellSlot(int slot) {
         return slot == PATH[0];
     }
 
-    private int getTotalSold() {
-        MultiplierManager mm = plugin.getMultiplierManager();
-        return mm.getStats(player).getOrDefault(categoryId, 0);
+    /** Check whether a given slot is the category info slot (top item). */
+    public boolean isCategoryInfoSlot(int slot) {
+        return slot == SLOT_CATEGORY_INFO;
     }
 
     private ItemStack makeItem(Material mat, String name, List<String> lore) {

@@ -26,7 +26,7 @@ public class SellManager {
     public SellResult sellAll(Player player) {
         double totalEarned = 0.0;
         int totalItems = 0;
-        Map<String, Integer> categorySales = new HashMap<>();
+        Map<String, Double> categoryEarnings = new HashMap<>();
 
         for (int i = 0; i < player.getInventory().getSize(); i++) {
             ItemStack item = player.getInventory().getItem(i);
@@ -41,13 +41,14 @@ public class SellManager {
             String cat = plugin.getPriceManager().getCategory(key);
             double mult = plugin.getMultiplierManager().getMultiplier(player, cat);
             int amount = item.getAmount();
-            totalEarned += base * mult * amount;
+            double earned = base * mult * amount;
+            totalEarned += earned;
             totalItems += amount;
-            categorySales.merge(cat, amount, Integer::sum);
+            categoryEarnings.merge(cat, earned, Double::sum);
             player.getInventory().setItem(i, null);
         }
 
-        return finalizeSell(player, totalEarned, totalItems, categorySales);
+        return finalizeSell(player, totalEarned, totalItems, categoryEarnings);
     }
 
     // ---------------------------------------------------------------
@@ -56,7 +57,7 @@ public class SellManager {
     public SellResult sellCategory(Player player, String category) {
         double totalEarned = 0.0;
         int totalItems = 0;
-        Map<String, Integer> categorySales = new HashMap<>();
+        Map<String, Double> categoryEarnings = new HashMap<>();
 
         for (int i = 0; i < player.getInventory().getSize(); i++) {
             ItemStack item = player.getInventory().getItem(i);
@@ -73,13 +74,14 @@ public class SellManager {
 
             double mult = plugin.getMultiplierManager().getMultiplier(player, cat);
             int amount = item.getAmount();
-            totalEarned += base * mult * amount;
+            double earned = base * mult * amount;
+            totalEarned += earned;
             totalItems += amount;
-            categorySales.merge(cat, amount, Integer::sum);
+            categoryEarnings.merge(cat, earned, Double::sum);
             player.getInventory().setItem(i, null);
         }
 
-        return finalizeSell(player, totalEarned, totalItems, categorySales);
+        return finalizeSell(player, totalEarned, totalItems, categoryEarnings);
     }
 
     // ---------------------------------------------------------------
@@ -88,7 +90,7 @@ public class SellManager {
     public SellResult sellItemType(Player player, String itemKey) {
         double totalEarned = 0.0;
         int totalItems = 0;
-        Map<String, Integer> categorySales = new HashMap<>();
+        Map<String, Double> categoryEarnings = new HashMap<>();
 
         double base = plugin.getPriceManager().getPrice(itemKey);
         if (base <= 0) return new SellResult(0, 0, false);
@@ -104,13 +106,14 @@ public class SellManager {
             if (!itemKey.equalsIgnoreCase(key)) continue;
 
             int amount = item.getAmount();
-            totalEarned += base * mult * amount;
+            double earned = base * mult * amount;
+            totalEarned += earned;
             totalItems += amount;
-            categorySales.merge(cat, amount, Integer::sum);
+            categoryEarnings.merge(cat, earned, Double::sum);
             player.getInventory().setItem(i, null);
         }
 
-        return finalizeSell(player, totalEarned, totalItems, categorySales);
+        return finalizeSell(player, totalEarned, totalItems, categoryEarnings);
     }
 
     // ---------------------------------------------------------------
@@ -151,7 +154,7 @@ public class SellManager {
     // Finalize a sell operation
     // ---------------------------------------------------------------
     private SellResult finalizeSell(Player player, double totalEarned, int totalItems,
-                                     Map<String, Integer> categorySales) {
+                                     Map<String, Double> categoryEarnings) {
         if (totalEarned <= 0) {
             player.sendMessage(plugin.getConfigManager().getMessage("nothing-to-sell"));
             return new SellResult(0, 0, false);
@@ -163,8 +166,8 @@ public class SellManager {
             return new SellResult(0, 0, false);
         }
 
-        for (Map.Entry<String, Integer> e : categorySales.entrySet()) {
-            plugin.getMultiplierManager().addSales(player, e.getKey(), e.getValue());
+        for (Map.Entry<String, Double> e : categoryEarnings.entrySet()) {
+            plugin.getMultiplierManager().addEarnings(player, e.getKey(), e.getValue());
         }
 
         sendSellNotification(player, totalEarned, totalItems);
@@ -172,20 +175,20 @@ public class SellManager {
     }
 
     // ---------------------------------------------------------------
-    // Notification: action bar (always) + title popup + chat (if prefix-enabled)
+    // Notification: action bar only (+$amount in lime/green color)
+    // Title and chat are optional via config
     // ---------------------------------------------------------------
     public void sendSellNotification(Player player, double amount, int itemCount) {
         String formatted = String.format("%.2f", amount);
 
-        // Action bar: always shown
-        String actionBarText = ChatColor.GREEN + "+" + ChatColor.GOLD + "$" + formatted
-                + ChatColor.GRAY + " (" + itemCount + " items)";
+        // Action bar: always shown – lime color (&a) "+$amount"
+        String actionBarText = ChatColor.GREEN + "+$" + formatted;
         player.sendActionBar(actionBarText);
 
-        // Title notification: large green floating text
+        // Title notification: only if enabled in config
         if (plugin.getConfigManager().isTitleNotificationEnabled()) {
             player.sendTitle(
-                    ChatColor.GREEN + "+" + ChatColor.GOLD + "$" + formatted,
+                    ChatColor.GREEN + "+$" + formatted,
                     ChatColor.GRAY + "You sold " + itemCount + " item" + (itemCount == 1 ? "" : "s"),
                     10, 40, 20
             );

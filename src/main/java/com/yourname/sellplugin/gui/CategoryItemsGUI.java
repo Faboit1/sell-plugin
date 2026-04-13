@@ -78,8 +78,9 @@ public class CategoryItemsGUI implements InventoryHolder {
     private void populate() {
         inv.clear();
 
-        // Background for navigation row
-        ItemStack bg = makeItem(Material.BLACK_STAINED_GLASS_PANE, " ", Collections.emptyList());
+        // Background for navigation row (uses configurable filler block)
+        Material fillerMat = plugin.getConfigManager().getFillerBlock();
+        ItemStack bg = makeItem(fillerMat, " ", Collections.emptyList());
         for (int i = 45; i < 54; i++) inv.setItem(i, bg);
 
         // Items area

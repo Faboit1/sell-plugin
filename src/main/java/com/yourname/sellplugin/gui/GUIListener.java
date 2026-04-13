@@ -46,7 +46,8 @@ public class GUIListener implements Listener {
         // All other plugin GUIs: cancel drags entirely.
         if (holder instanceof CategoryProgressGUI
                 || holder instanceof CategoryItemsGUI
-                || holder instanceof SellAllGUI) {
+                || holder instanceof SellAllGUI
+                || holder instanceof ConfirmSellGUI) {
             e.setCancelled(true);
         }
     }
@@ -106,10 +107,37 @@ public class GUIListener implements Listener {
                 return;
             }
 
-            // Click the category item at the start of the path → sell category
+            // Click the category info icon at slot 4 → open confirm/cancel GUI to sell category
+            if (catProgressGUI.isCategoryInfoSlot(slot)) {
+                new ConfirmSellGUI(plugin, player, catProgressGUI.getCategoryId()).open(player);
+                return;
+            }
+
+            // Click the first path node (chest) → open items list for this category
             if (catProgressGUI.isSellSlot(slot)) {
+                new CategoryItemsGUI(plugin, player, catProgressGUI.getCategoryId(), 0).open(player);
+                return;
+            }
+            return;
+        }
+
+        // ── ConfirmSellGUI ───────────────────────────────────────────────────
+        if (holder instanceof ConfirmSellGUI confirmGUI) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() == null
+                    || !(e.getClickedInventory().getHolder() instanceof ConfirmSellGUI)) return;
+
+            int slot = e.getSlot();
+
+            if (slot == ConfirmSellGUI.SLOT_CONFIRM) {
                 player.closeInventory();
-                plugin.getSellManager().sellCategory(player, catProgressGUI.getCategoryId());
+                plugin.getSellManager().sellCategory(player, confirmGUI.getCategoryId());
+                return;
+            }
+
+            if (slot == ConfirmSellGUI.SLOT_CANCEL) {
+                // Go back to the progress GUI
+                new CategoryProgressGUI(plugin, player, confirmGUI.getCategoryId()).open(player);
                 return;
             }
             return;
@@ -182,7 +210,7 @@ public class GUIListener implements Listener {
 
         double totalEarned = 0.0;
         int totalItems = 0;
-        Map<String, Integer> categorySales = new HashMap<>();
+        Map<String, Double> categoryEarnings = new HashMap<>();
         List<ItemStack> sellableItems = new ArrayList<>();
         List<ItemStack> nonSellableItems = new ArrayList<>();
 
@@ -201,9 +229,10 @@ public class GUIListener implements Listener {
             String cat = pl.getPriceManager().getCategory(key);
             double mult = pl.getMultiplierManager().getMultiplier(player, cat);
             int amount = item.getAmount();
-            totalEarned += base * mult * amount;
+            double earned = base * mult * amount;
+            totalEarned += earned;
             totalItems += amount;
-            categorySales.merge(cat, amount, Integer::sum);
+            categoryEarnings.merge(cat, earned, Double::sum);
             sellableItems.add(item);
         }
 
@@ -216,8 +245,8 @@ public class GUIListener implements Listener {
         if (totalEarned > 0) {
             boolean ok = pl.getEconomyManager().deposit(player, totalEarned);
             if (ok) {
-                for (Map.Entry<String, Integer> entry : categorySales.entrySet()) {
-                    pl.getMultiplierManager().addSales(player, entry.getKey(), entry.getValue());
+                for (Map.Entry<String, Double> entry : categoryEarnings.entrySet()) {
+                    pl.getMultiplierManager().addEarnings(player, entry.getKey(), entry.getValue());
                 }
                 pl.getSellManager().sendSellNotification(player, totalEarned, totalItems);
             } else {

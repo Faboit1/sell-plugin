@@ -117,6 +117,38 @@ public class SellManager {
     }
 
     // ---------------------------------------------------------------
+    // Count all sellable items across every category
+    // ---------------------------------------------------------------
+    public int countAllItems(Player player) {
+        int total = 0;
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item == null || item.getType() == Material.AIR) continue;
+            String key = plugin.getPriceManager().getItemKey(item);
+            if (key == null || plugin.getPriceManager().getPrice(key) <= 0) continue;
+            total += item.getAmount();
+        }
+        return total;
+    }
+
+    // ---------------------------------------------------------------
+    // Calculate total value of all sellable items (with multipliers)
+    // ---------------------------------------------------------------
+    public double calculateAllValue(Player player) {
+        double total = 0.0;
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item == null || item.getType() == Material.AIR) continue;
+            String key = plugin.getPriceManager().getItemKey(item);
+            if (key == null) continue;
+            double base = plugin.getPriceManager().getPrice(key);
+            if (base <= 0) continue;
+            String cat = plugin.getPriceManager().getCategory(key);
+            double mult = plugin.getMultiplierManager().getMultiplier(player, cat);
+            total += base * mult * item.getAmount();
+        }
+        return total;
+    }
+
+    // ---------------------------------------------------------------
     // Count how many sellable items of a category the player has
     // ---------------------------------------------------------------
     public int countCategoryItems(Player player, String category) {

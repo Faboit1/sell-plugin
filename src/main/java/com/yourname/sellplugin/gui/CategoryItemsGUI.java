@@ -11,6 +11,9 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionType;
 
 import java.util.*;
 
@@ -20,9 +23,9 @@ import java.util.*;
  * Rows 1-5 (slots 0-44): item display area (up to 45 items per page).
  * Row 6 (slots 45-53):   navigation bar.
  *   45 – Back (return to CategoryProgressGUI)
- *   46 – Previous page
- *   49 – Page indicator
- *   52 – Next page
+ *   48 – Previous page  (directly left of page indicator)
+ *   49 – Page indicator (paper)
+ *   50 – Next page      (directly right of page indicator)
  *   53 – Sell All in category
  */
 public class CategoryItemsGUI implements InventoryHolder {
@@ -31,9 +34,9 @@ public class CategoryItemsGUI implements InventoryHolder {
 
     // Navigation slots
     public static final int SLOT_BACK     = 45;
-    public static final int SLOT_PREV     = 46;
+    public static final int SLOT_PREV     = 48;
     public static final int SLOT_INFO     = 49;
-    public static final int SLOT_NEXT     = 52;
+    public static final int SLOT_NEXT     = 50;
     public static final int SLOT_SELL_ALL = 53;
 
     private final Inventory inv;
@@ -77,9 +80,10 @@ public class CategoryItemsGUI implements InventoryHolder {
 
     private void populate() {
         inv.clear();
+        ConfigManager cfg = plugin.getConfigManager();
 
-        // Background for navigation row (uses configurable filler block)
-        Material fillerMat = plugin.getConfigManager().getFillerBlock();
+        // Background for navigation row
+        Material fillerMat = cfg.getFillerBlock();
         ItemStack bg = makeItem(fillerMat, " ", Collections.emptyList());
         for (int i = 45; i < 54; i++) inv.setItem(i, bg);
 
@@ -87,36 +91,50 @@ public class CategoryItemsGUI implements InventoryHolder {
         int start = page * ITEMS_PER_PAGE;
         int end   = Math.min(start + ITEMS_PER_PAGE, itemKeys.size());
         for (int i = start; i < end; i++) {
-            int slot = i - start;
-            inv.setItem(slot, buildItemDisplay(itemKeys.get(i)));
+            inv.setItem(i - start, buildItemDisplay(itemKeys.get(i)));
         }
         // Fill remaining item area with gray glass
         ItemStack filler = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", Collections.emptyList());
         for (int i = (end - start); i < 45; i++) inv.setItem(i, filler);
 
-        // Navigation buttons
-        List<String> backLore = Collections.singletonList(ChatColor.GRAY + "Return to category view.");
-        inv.setItem(SLOT_BACK, makeItem(Material.ARROW,
-                ChatColor.RED + "" + ChatColor.BOLD + "Back", backLore));
+        // ── Back button ────────────────────────────────────────────────────
+        List<String> backLore = cfg.getIconLore("back",
+                Collections.singletonList(ChatColor.GRAY + "Return to category view."));
+        inv.setItem(SLOT_BACK, makeItem(
+                cfg.getIconMaterial("back", Material.ARROW),
+                cfg.getIconName("back", "&c&lBack"),
+                backLore));
 
+        // ── Previous page ──────────────────────────────────────────────────
         if (page > 0) {
-            List<String> prevLore = Collections.singletonList(ChatColor.GRAY + "Previous page.");
-            inv.setItem(SLOT_PREV, makeItem(Material.ARROW,
-                    ChatColor.YELLOW + "← Previous Page", prevLore));
+            List<String> prevLore = cfg.getIconLore("prev-page",
+                    Collections.singletonList(ChatColor.GRAY + "Previous page."));
+            inv.setItem(SLOT_PREV, makeItem(
+                    cfg.getIconMaterial("prev-page", Material.ARROW),
+                    cfg.getIconName("prev-page", "&e← Previous"),
+                    prevLore));
         }
 
+        // ── Page indicator ─────────────────────────────────────────────────
         int totalPages = Math.max(1, (int) Math.ceil((double) itemKeys.size() / ITEMS_PER_PAGE));
         List<String> infoLore = Collections.singletonList(
                 ChatColor.GRAY + "Total items: " + itemKeys.size());
-        inv.setItem(SLOT_INFO, makeItem(Material.PAPER,
-                ChatColor.WHITE + "Page " + (page + 1) + "/" + totalPages, infoLore));
+        inv.setItem(SLOT_INFO, makeItem(
+                cfg.getIconMaterial("page-indicator", Material.PAPER),
+                ChatColor.WHITE + "Page " + (page + 1) + " / " + totalPages,
+                infoLore));
 
+        // ── Next page ──────────────────────────────────────────────────────
         if ((page + 1) * ITEMS_PER_PAGE < itemKeys.size()) {
-            List<String> nextLore = Collections.singletonList(ChatColor.GRAY + "Next page.");
-            inv.setItem(SLOT_NEXT, makeItem(Material.ARROW,
-                    ChatColor.YELLOW + "Next Page →", nextLore));
+            List<String> nextLore = cfg.getIconLore("next-page",
+                    Collections.singletonList(ChatColor.GRAY + "Next page."));
+            inv.setItem(SLOT_NEXT, makeItem(
+                    cfg.getIconMaterial("next-page", Material.ARROW),
+                    cfg.getIconName("next-page", "&eNext →"),
+                    nextLore));
         }
 
+        // ── Sell-All button ────────────────────────────────────────────────
         double catValue = plugin.getSellManager().calculateCategoryValue(player, categoryId);
         int catCount    = plugin.getSellManager().countCategoryItems(player, categoryId);
         List<String> sellLore = new ArrayList<>();
@@ -127,8 +145,10 @@ public class CategoryItemsGUI implements InventoryHolder {
         } else {
             sellLore.add(ChatColor.RED + "No items to sell.");
         }
-        inv.setItem(SLOT_SELL_ALL, makeItem(Material.GOLD_INGOT,
-                ChatColor.GREEN + "" + ChatColor.BOLD + "Sell Category", sellLore));
+        inv.setItem(SLOT_SELL_ALL, makeItem(
+                cfg.getIconMaterial("sell-category", Material.GOLD_INGOT),
+                cfg.getIconName("sell-category", "&a&lSell Category"),
+                sellLore));
     }
 
     // ── Build a display ItemStack for a price-list entry ─────────────────────
@@ -139,42 +159,53 @@ public class CategoryItemsGUI implements InventoryHolder {
         double mult = plugin.getMultiplierManager().getMultiplier(player, categoryId);
         double effective = base * mult;
 
-        // Resolve material (handle "MAT:POTIONTYPE" keys)
-        Material mat = resolveMaterial(itemKey);
-        if (mat == null) mat = Material.BARRIER;
-
-        // Count how many the player holds
-        int playerHas = countInInventory(itemKey);
+        // Build correct ItemStack (handles potions with PotionMeta)
+        ItemStack item = resolveItemStack(itemKey);
 
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "─────────────────────");
-        lore.add(ChatColor.GRAY + "Base price:   " + ChatColor.GOLD + "$" + String.format("%.2f", base));
+        lore.add(ChatColor.GRAY + "Base price:   " + ChatColor.GREEN + "$" + String.format("%.2f", base));
         lore.add(ChatColor.GRAY + "Multiplier:   " + ChatColor.AQUA + String.format("%.2fx", mult));
         lore.add(ChatColor.GRAY + "Sell price:   " + ChatColor.GREEN + "$" + String.format("%.2f", effective));
         lore.add(ChatColor.DARK_GRAY + "─────────────────────");
-        lore.add(ChatColor.GRAY + "You have: " + ChatColor.WHITE + playerHas);
-        if (playerHas > 0) {
-            lore.add(ChatColor.YELLOW + "Click to sell all " + playerHas + "x");
-        }
 
         String displayName = ChatColor.WHITE + formatItemName(itemKey);
-        return makeItem(mat, displayName, lore);
-    }
 
-    private Material resolveMaterial(String itemKey) {
-        // Keys can be "MATERIAL" or "MATERIAL:POTIONTYPE"
-        String base = itemKey.contains(":") ? itemKey.split(":")[0] : itemKey;
-        return Material.matchMaterial(base);
-    }
-
-    private int countInInventory(String itemKey) {
-        int total = 0;
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (item == null || item.getType() == Material.AIR) continue;
-            String key = plugin.getPriceManager().getItemKey(item);
-            if (itemKey.equalsIgnoreCase(key)) total += item.getAmount();
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(displayName);
+            meta.setLore(lore);
+            item.setItemMeta(meta);
         }
-        return total;
+        return item;
+    }
+
+    /**
+     * Creates an ItemStack for the given item key.
+     * For potion keys (e.g. "POTION:NIGHT_VISION") the correct PotionMeta
+     * is applied so the correct potion colour is shown in the GUI.
+     */
+    private ItemStack resolveItemStack(String itemKey) {
+        if (itemKey.contains(":")) {
+            String[] parts = itemKey.split(":", 2);
+            Material mat = Material.matchMaterial(parts[0]);
+            if (mat == null) return new ItemStack(Material.BARRIER);
+
+            ItemStack item = new ItemStack(mat);
+            ItemMeta meta = item.getItemMeta();
+            if (meta instanceof PotionMeta potionMeta) {
+                try {
+                    PotionType type = PotionType.valueOf(parts[1]);
+                    potionMeta.setBasePotionData(new PotionData(type));
+                    item.setItemMeta(meta);
+                } catch (IllegalArgumentException ignored) {
+                    // Unknown potion type – leave meta as-is
+                }
+            }
+            return item;
+        }
+        Material mat = Material.matchMaterial(itemKey);
+        return new ItemStack(mat != null ? mat : Material.BARRIER);
     }
 
     private String formatItemName(String key) {
@@ -239,3 +270,4 @@ public class CategoryItemsGUI implements InventoryHolder {
         return page;
     }
 }
+

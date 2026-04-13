@@ -48,7 +48,8 @@ public class GUIListener implements Listener {
                 || holder instanceof CategoryItemsGUI
                 || holder instanceof SellAllGUI
                 || holder instanceof ConfirmSellGUI
-                || holder instanceof ConfirmSellAllGUI) {
+                || holder instanceof ConfirmSellAllGUI
+                || holder instanceof TopSellGUI) {
             e.setCancelled(true);
         }
     }
@@ -64,15 +65,13 @@ public class GUIListener implements Listener {
 
         // ── ShopMainGUI ──────────────────────────────────────────────────────
         if (holder instanceof ShopMainGUI shopGUI) {
-            // Determine which inventory was clicked
             Inventory clicked = e.getClickedInventory();
 
-            // Click in player inventory (bottom) – allow freely (including shift-click)
+            // Click in player inventory (bottom) – allow freely
             if (clicked != null && clicked.equals(player.getInventory())) {
-                return; // allow
+                return;
             }
 
-            // Click in the shop GUI (top inventory)
             if (clicked != null && clicked.getHolder() instanceof ShopMainGUI) {
                 int slot = e.getSlot();
 
@@ -90,7 +89,6 @@ public class GUIListener implements Listener {
                 return;
             }
 
-            // Safety: cancel anything else
             e.setCancelled(true);
             return;
         }
@@ -108,13 +106,7 @@ public class GUIListener implements Listener {
                 return;
             }
 
-            // Click the category info icon at slot 4 → open confirm/cancel GUI to sell category
-            if (catProgressGUI.isCategoryInfoSlot(slot)) {
-                new ConfirmSellGUI(plugin, player, catProgressGUI.getCategoryId()).open(player);
-                return;
-            }
-
-            // Click the first path node (chest) → open items list for this category
+            // Click the first path node → open items list for this category
             if (catProgressGUI.isSellSlot(slot)) {
                 new CategoryItemsGUI(plugin, player, catProgressGUI.getCategoryId(), 0).open(player);
                 return;
@@ -137,7 +129,6 @@ public class GUIListener implements Listener {
             }
 
             if (slot == ConfirmSellGUI.SLOT_CANCEL) {
-                // Go back to the progress GUI
                 new CategoryProgressGUI(plugin, player, confirmGUI.getCategoryId()).open(player);
                 return;
             }
@@ -177,7 +168,6 @@ public class GUIListener implements Listener {
             String itemKey = catItemsGUI.getItemKeyAtSlot(slot);
             if (itemKey != null) {
                 plugin.getSellManager().sellItemType(player, itemKey);
-                // Refresh the GUI to show updated counts
                 new CategoryItemsGUI(plugin, player, catItemsGUI.getCategoryId(),
                         catItemsGUI.getPage()).open(player);
             }
@@ -214,6 +204,29 @@ public class GUIListener implements Listener {
                 new SellAllGUI(plugin, player).open(player);
             }
         }
+
+        // ── TopSellGUI ────────────────────────────────────────────────────────
+        if (holder instanceof TopSellGUI topSellGUI) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() == null
+                    || !(e.getClickedInventory().getHolder() instanceof TopSellGUI)) return;
+
+            int slot = e.getSlot();
+
+            if (slot == TopSellGUI.SLOT_CLOSE) {
+                player.closeInventory();
+                return;
+            }
+
+            if (slot == TopSellGUI.SLOT_PREV && topSellGUI.hasPrevPage()) {
+                topSellGUI.prevPage().open(player);
+                return;
+            }
+
+            if (slot == TopSellGUI.SLOT_NEXT && topSellGUI.hasNextPage()) {
+                topSellGUI.nextPage().open(player);
+            }
+        }
     }
 
     // ── Close handling – sell items placed in ShopMainGUI ────────────────────
@@ -234,7 +247,6 @@ public class GUIListener implements Listener {
         List<ItemStack> sellableItems = new ArrayList<>();
         List<ItemStack> nonSellableItems = new ArrayList<>();
 
-        // Classify items in slots 0-35 (the item-placement area)
         for (int i = 0; i < ShopMainGUI.BOTTOM_ROW_START; i++) {
             ItemStack item = top.getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
@@ -256,12 +268,10 @@ public class GUIListener implements Listener {
             sellableItems.add(item);
         }
 
-        // Always return non-sellable items
         for (ItemStack item : nonSellableItems) {
             returnItem(player, item);
         }
 
-        // Process sellable items
         if (totalEarned > 0) {
             boolean ok = pl.getEconomyManager().deposit(player, totalEarned);
             if (ok) {
@@ -270,7 +280,6 @@ public class GUIListener implements Listener {
                 }
                 pl.getSellManager().sendSellNotification(player, totalEarned, totalItems);
             } else {
-                // Economy error – return sellable items too
                 player.sendMessage(pl.getConfigManager().getMessage("economy-error"));
                 for (ItemStack item : sellableItems) {
                     returnItem(player, item);
@@ -279,10 +288,6 @@ public class GUIListener implements Listener {
         }
     }
 
-    /**
-     * Returns an item to the player's inventory; drops it at their feet if
-     * the inventory is full.
-     */
     private void returnItem(Player player, ItemStack item) {
         HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(item);
         for (ItemStack drop : leftover.values()) {
@@ -290,3 +295,4 @@ public class GUIListener implements Listener {
         }
     }
 }
+

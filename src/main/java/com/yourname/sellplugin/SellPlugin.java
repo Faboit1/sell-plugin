@@ -2,6 +2,7 @@ package com.yourname.sellplugin;
 
 import com.yourname.sellplugin.command.SellAllCommand;
 import com.yourname.sellplugin.command.SellCommand;
+import com.yourname.sellplugin.command.TopSellCommand;
 import com.yourname.sellplugin.economy.EconomyManager;
 import com.yourname.sellplugin.gui.GUIListener;
 import com.yourname.sellplugin.manager.ConfigManager;
@@ -38,6 +39,7 @@ public class SellPlugin extends JavaPlugin {
 
         getCommand("sell").setExecutor(new SellCommand(this));
         getCommand("sellall").setExecutor(new SellAllCommand(this));
+        getCommand("topsell").setExecutor(new TopSellCommand(this));
         getServer().getPluginManager().registerEvents(new GUIListener(this), this);
 
         getLogger().info("SellPlugin has been enabled successfully.");

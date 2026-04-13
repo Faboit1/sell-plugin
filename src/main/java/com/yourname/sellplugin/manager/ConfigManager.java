@@ -165,6 +165,42 @@ public class ConfigManager {
         return color(prefix + msg);
     }
 
+    // ---- Icons ----------------------------------------------------------------
+    /**
+     * Returns the configured Material for an icon key, falling back to
+     * {@code fallback} if the key is absent or the material name is invalid.
+     *
+     * @param key      e.g. "back", "confirm", "prev-page"
+     * @param fallback default Material to use
+     */
+    public Material getIconMaterial(String key, Material fallback) {
+        String matName = plugin.getConfig().getString("icons." + key + ".material");
+        if (matName == null) return fallback;
+        Material mat = Material.matchMaterial(matName);
+        return mat != null ? mat : fallback;
+    }
+
+    /**
+     * Returns the colour-translated display name for an icon key.
+     * Falls back to {@code defaultName} (also colour-translated) if absent.
+     */
+    public String getIconName(String key, String defaultName) {
+        String name = plugin.getConfig().getString("icons." + key + ".name");
+        return color(name != null ? name : defaultName);
+    }
+
+    /**
+     * Returns the colour-translated lore lines for an icon key.
+     * Falls back to {@code defaultLore} (pre-coloured) if the list is empty.
+     */
+    public List<String> getIconLore(String key, List<String> defaultLore) {
+        List<String> raw = plugin.getConfig().getStringList("icons." + key + ".lore");
+        if (raw.isEmpty()) return defaultLore;
+        List<String> result = new ArrayList<>();
+        for (String line : raw) result.add(color(line));
+        return result;
+    }
+
     // ---- Reload -----------------------------------------------------------
     public void reload() {
         plugin.reloadConfig();

@@ -19,18 +19,18 @@ import java.util.List;
 /**
  * Category progress GUI – full double-chest (54 slots).
  *
- * A "Snake / U-Path" of multiplier milestones winds through the menu.
+ * A vertical "snake / U-Path" of multiplier milestones winds through the menu.
  * Each milestone goes from 1.0x to 3.0x in 0.1 increments (21 nodes).
  *
- * Colour key:
+ * The snake starts vertically (column 1 going down, then column 2 going up, …).
+ *
+ * Colour key (configurable via config.yml progress-bar section):
  *   GREEN  – completed milestone
- *   YELLOW – current / in-progress milestone (shows money earned, required, %)
+ *   YELLOW – current / in-progress milestone (shows money earned & required)
  *   GRAY   – locked / future milestone
  *
- * The very first node opens the CategoryItemsGUI showing sellable items.
- * The top category icon (slot 4) sells all items of that category (with confirm).
- *
- * All text uses small-capital Unicode letters.
+ * The very first path node opens the CategoryItemsGUI.
+ * Back button sits at slot 53 (bottom-right).
  */
 public class CategoryProgressGUI implements InventoryHolder {
 
@@ -41,28 +41,34 @@ public class CategoryProgressGUI implements InventoryHolder {
     /** Floating-point tolerance for milestone comparisons. */
     private static final double EPSILON = 0.001;
 
-    /** Back button slot (bottom-right area). */
+    /** Back button slot (bottom-right). */
     public static final int SLOT_BACK = 53;
 
-    /** Category info icon at slot 4 – clicking sells category (with confirm). */
-    public static final int SLOT_CATEGORY_INFO = 4;
-
     /**
-     * The 21-node snake path through the 54-slot grid.
+     * Vertical snake path (21 nodes).
      *
-     * Row 0 (0-8):   border / category info at slot 4
-     * Row 1 (9-17):  → path nodes 0-6  (slots 10-16)
-     * Row 2 (18-26): ↓ path node 7     (slot 25)
-     * Row 3 (27-35): ← path nodes 8-14 (slots 34 down to 28)
-     * Row 4 (36-44): ↓ path node 15    (slot 37)
-     * Row 5 (45-53): → path nodes 16-20 (slots 46-50)
+     * Slot layout reference (row × col, 0-indexed):
+     *   Col:  0   1   2   3   4   5   6   7   8
+     *   Row0: 0   1   2   3   4   5   6   7   8
+     *   Row1: 9  10  11  12  13  14  15  16  17
+     *   Row2: 18  19  20  21  22  23  24  25  26
+     *   Row3: 27  28  29  30  31  32  33  34  35
+     *   Row4: 36  37  38  39  40  41  42  43  44
+     *   Row5: 45  46  47  48  49  50  51  52  53
+     *
+     * Snake (starts going down in col 1):
+     *   col 1 ↓: 10,19,28,37,46
+     *   col 2 ↑: 47,38,29,20,11
+     *   col 3 ↓: 12,21,30,39,48
+     *   col 4 ↑: 49,40,31,22,13
+     *   col 5 ↓:  14  (21st node)
      */
     private static final int[] PATH = {
-            10, 11, 12, 13, 14, 15, 16,   // row 1 left→right
-            25,                             // row 2 turn-down
-            34, 33, 32, 31, 30, 29, 28,   // row 3 right→left
-            37,                             // row 4 turn-down
-            46, 47, 48, 49, 50             // row 5 left→right
+            10, 19, 28, 37, 46,   // col 1 down
+            47, 38, 29, 20, 11,   // col 2 up
+            12, 21, 30, 39, 48,   // col 3 down
+            49, 40, 31, 22, 13,   // col 4 up
+            14                    // col 5 (1 node)
     };
 
     /** Multiplier value for each path node: 1.0, 1.1, 1.2 … 3.0. */
@@ -101,44 +107,17 @@ public class CategoryProgressGUI implements InventoryHolder {
         ItemStack bg = makeItem(fillerMat, " ", Collections.emptyList());
         for (int i = 0; i < SIZE; i++) inv.setItem(i, bg);
 
-        // ── Category info icon at slot 4 (top-centre) ───────────────────────
-        double mult = plugin.getMultiplierManager().getMultiplier(player, categoryId);
-        int itemCount = plugin.getSellManager().countCategoryItems(player, categoryId);
-        double value = plugin.getSellManager().calculateCategoryValue(player, categoryId);
-        double moneyEarned = plugin.getMultiplierManager().getMoneyEarned(player, categoryId);
-
-        List<String> iconLore = new ArrayList<>();
-        iconLore.add(ChatColor.DARK_GRAY + "───────────────────");
-        iconLore.add(ChatColor.GRAY + SmallCaps.convert("items in inventory: ")
-                + ChatColor.WHITE + itemCount);
-        iconLore.add(ChatColor.GRAY + SmallCaps.convert("sell value: ")
-                + ChatColor.GOLD + "$" + String.format("%.2f", value));
-        iconLore.add(ChatColor.GRAY + SmallCaps.convert("your multiplier: ")
-                + ChatColor.AQUA + String.format("%.2fx", mult));
-        iconLore.add(ChatColor.GRAY + SmallCaps.convert("total earned: ")
-                + ChatColor.GOLD + "$" + String.format("%.2f", moneyEarned));
-        iconLore.add(ChatColor.DARK_GRAY + "───────────────────");
-        if (itemCount > 0) {
-            iconLore.add(ChatColor.GREEN + SmallCaps.convert("click to sell all ")
-                    + ChatColor.WHITE + categoryId
-                    + ChatColor.GREEN + SmallCaps.convert(" items"));
-            iconLore.add(ChatColor.GREEN + SmallCaps.convert("from your inventory!"));
-        } else {
-            iconLore.add(ChatColor.RED + SmallCaps.convert("no sellable items found."));
-        }
-
-        inv.setItem(SLOT_CATEGORY_INFO, makeItem(cfg.getCategoryMaterial(categoryId),
-                cfg.getCategoryDisplayName(categoryId), iconLore));
-
         // ── Snake path ──────────────────────────────────────────────────────
+        double mult = plugin.getMultiplierManager().getMultiplier(player, categoryId);
+        double moneyEarned = plugin.getMultiplierManager().getMoneyEarned(player, categoryId);
         buildSnakePath(mult, moneyEarned);
 
         // ── Back button (bottom-right) ──────────────────────────────────────
-        List<String> backLore = new ArrayList<>();
-        backLore.add(ChatColor.GRAY + SmallCaps.convert("return to the main menu."));
+        List<String> backLore = cfg.getIconLore("back",
+                Collections.singletonList(ChatColor.GRAY + SmallCaps.convert("return to the main menu.")));
         inv.setItem(SLOT_BACK,
-                makeItem(Material.ARROW,
-                        ChatColor.RED + "" + ChatColor.BOLD + SmallCaps.convert("back"),
+                makeItem(cfg.getIconMaterial("back", Material.ARROW),
+                        cfg.getIconName("back", "&c&l" + SmallCaps.convert("back")),
                         backLore));
     }
 
@@ -153,28 +132,27 @@ public class CategoryProgressGUI implements InventoryHolder {
 
             // Determine colour state
             boolean completed = currentMultiplier >= milestone + 0.1 - EPSILON;
-            boolean inProgress = !completed
-                    && currentMultiplier >= milestone - EPSILON;
+            boolean inProgress = !completed && currentMultiplier >= milestone - EPSILON;
 
             Material paneMat;
             ChatColor nameColour;
             String status;
 
             if (completed) {
-                paneMat = Material.LIME_STAINED_GLASS_PANE;
+                paneMat = cfg.getProgressBarCompletedColor();
                 nameColour = ChatColor.GREEN;
                 status = SmallCaps.convert("completed");
             } else if (inProgress) {
-                paneMat = Material.YELLOW_STAINED_GLASS_PANE;
+                paneMat = cfg.getProgressBarInProgressColor();
                 nameColour = ChatColor.YELLOW;
                 status = SmallCaps.convert("in progress");
             } else {
-                paneMat = Material.GRAY_STAINED_GLASS_PANE;
+                paneMat = cfg.getProgressBarLockedColor();
                 nameColour = ChatColor.DARK_GRAY;
                 status = SmallCaps.convert("locked");
             }
 
-            // For the very first node, use the category material instead of glass
+            // First node uses the category icon instead of glass
             boolean isStart = (i == 0);
             Material displayMat = isStart ? cfg.getCategoryMaterial(categoryId) : paneMat;
 
@@ -187,40 +165,33 @@ public class CategoryProgressGUI implements InventoryHolder {
             lore.add(ChatColor.GRAY + SmallCaps.convert("status: ") + nameColour + status);
 
             if (isStart) {
-                // First node: show sellable items in category
                 lore.add(ChatColor.DARK_GRAY + "───────────────────");
                 lore.add(ChatColor.YELLOW + SmallCaps.convert("click to view items & prices"));
             }
 
             if (inProgress) {
-                // Show money earned, money required, and percentage for "in progress"
-                double step = cfg.getMultiplierStep();
-                if (step > 0) {
-                    double nextMilestone = milestone + 0.1;
-                    double moneyRequired = (nextMilestone - 1.0) / step;
+                // Show cumulative money earned vs required to reach next milestone
+                double moneyRequired = plugin.getMultiplierManager().getCumulativeThreshold(i + 1);
+                if (moneyRequired > 0) {
                     double percentage = Math.min(100.0, (moneyEarned / moneyRequired) * 100.0);
-
                     lore.add(ChatColor.DARK_GRAY + "───────────────────");
                     lore.add(ChatColor.GRAY + SmallCaps.convert("earned: ")
-                            + ChatColor.GOLD + "$" + String.format("%.2f", moneyEarned));
+                            + ChatColor.GREEN + "$" + String.format("%.2f", moneyEarned));
                     lore.add(ChatColor.GRAY + SmallCaps.convert("required: ")
-                            + ChatColor.GOLD + "$" + String.format("%.2f", moneyRequired));
+                            + ChatColor.GREEN + "$" + String.format("%.2f", moneyRequired));
                     lore.add(ChatColor.GRAY + SmallCaps.convert("progress: ")
                             + ChatColor.YELLOW + String.format("%.1f%%", percentage));
                 }
             }
 
             if (!completed && !isStart && !inProgress) {
-                // Show how much more money needed (locked nodes)
-                double step = cfg.getMultiplierStep();
-                if (step > 0) {
-                    double moneyNeeded = (milestone - 1.0) / step;
-                    double remaining = Math.max(0, moneyNeeded - moneyEarned);
-                    if (remaining > 0) {
-                        lore.add(ChatColor.GRAY + SmallCaps.convert("earn ")
-                                + ChatColor.GOLD + "$" + String.format("%.2f", remaining)
-                                + ChatColor.GRAY + SmallCaps.convert(" more to unlock"));
-                    }
+                // Show how much more money is needed for locked nodes
+                double moneyNeeded = plugin.getMultiplierManager().getCumulativeThreshold(i);
+                double remaining = Math.max(0, moneyNeeded - moneyEarned);
+                if (remaining > 0) {
+                    lore.add(ChatColor.GRAY + SmallCaps.convert("earn ")
+                            + ChatColor.GREEN + "$" + String.format("%.2f", remaining)
+                            + ChatColor.GRAY + SmallCaps.convert(" more to unlock"));
                 }
             }
 
@@ -238,11 +209,6 @@ public class CategoryProgressGUI implements InventoryHolder {
     /** Check whether a given slot is the first path node. */
     public boolean isSellSlot(int slot) {
         return slot == PATH[0];
-    }
-
-    /** Check whether a given slot is the category info slot (top item). */
-    public boolean isCategoryInfoSlot(int slot) {
-        return slot == SLOT_CATEGORY_INFO;
     }
 
     private ItemStack makeItem(Material mat, String name, List<String> lore) {
@@ -269,3 +235,4 @@ public class CategoryProgressGUI implements InventoryHolder {
         return categoryId;
     }
 }
+

@@ -15,9 +15,18 @@ commands:
     usage: /sellall
     permission: sellplugin.use
 
+  topsell:
+    description: Opens the top sellers leaderboard.
+    usage: /topsell
+    aliases: [sellertop, leaderboard]
+    permission: sellplugin.topsell
+
 permissions:
   sellplugin.use:
     description: Allows a player to use the sell commands.
+    default: true
+  sellplugin.topsell:
+    description: Allows a player to view the top sellers leaderboard.
     default: true
   sellplugin.reload:
     description: Allows a player to reload the plugin configuration.

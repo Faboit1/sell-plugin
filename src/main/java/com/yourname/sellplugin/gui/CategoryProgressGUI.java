@@ -45,30 +45,36 @@ public class CategoryProgressGUI implements InventoryHolder {
     public static final int SLOT_BACK = 53;
 
     /**
-     * Vertical snake path (21 nodes).
+     * Horizontal snake path (21 nodes), each node separated by 1 filler tile.
      *
      * Slot layout reference (row × col, 0-indexed):
      *   Col:  0   1   2   3   4   5   6   7   8
-     *   Row0: 0   1   2   3   4   5   6   7   8
+     *   Row0: 0   1   2   3   4   5   6   7   8   ← decoration row
      *   Row1: 9  10  11  12  13  14  15  16  17
      *   Row2: 18  19  20  21  22  23  24  25  26
      *   Row3: 27  28  29  30  31  32  33  34  35
      *   Row4: 36  37  38  39  40  41  42  43  44
      *   Row5: 45  46  47  48  49  50  51  52  53
      *
-     * Snake (starts going down in col 1):
-     *   col 1 ↓: 10,19,28,37,46
-     *   col 2 ↑: 47,38,29,20,11
-     *   col 3 ↓: 12,21,30,39,48
-     *   col 4 ↑: 49,40,31,22,13
-     *   col 5 ↓:  14  (21st node)
+     * Nodes occupy every other slot in each row; rows alternate direction.
+     * Gap slots between nodes are filled with the background filler block.
+     *
+     *   Row1 →: 9, [10], 11, [12], 13, [14], 15, [16], 17
+     *   turn  : 17 → 26 (adjacent vertically)
+     *   Row2 ←: 26, [25], 24, [23], 22, [21], 20, [19], 18
+     *   turn  : 18 → 27 (adjacent vertically)
+     *   Row3 →: 27, [28], 29, [30], 31, [32], 33, [34], 35
+     *   turn  : 35 → 44 (adjacent vertically)
+     *   Row4 ←: 44, [43], 42, [41], 40, [39], 38, [37], 36
+     *   turn  : 36 → 45 (adjacent vertically)
+     *   Row5 →: 45  (21st node)
      */
     private static final int[] PATH = {
-            10, 19, 28, 37, 46,   // col 1 down
-            47, 38, 29, 20, 11,   // col 2 up
-            12, 21, 30, 39, 48,   // col 3 down
-            49, 40, 31, 22, 13,   // col 4 up
-            14                    // col 5 (1 node)
+             9, 11, 13, 15, 17,   // row 1 →
+            26, 24, 22, 20, 18,   // row 2 ←
+            27, 29, 31, 33, 35,   // row 3 →
+            44, 42, 40, 38, 36,   // row 4 ←
+            45                    // row 5 (1 node)
     };
 
     /** Multiplier value for each path node: 1.0, 1.1, 1.2 … 3.0. */

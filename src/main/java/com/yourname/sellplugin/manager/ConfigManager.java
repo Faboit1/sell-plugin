@@ -16,12 +16,46 @@ public class ConfigManager {
     }
 
     // ---- Multiplier -------------------------------------------------------
-    public double getMultiplierStep() {
-        return plugin.getConfig().getDouble("multiplier-step", 0.001);
+    /** Cost (in money earned) to unlock the very first multiplier level (1.1x). */
+    public double getStartMultiplier() {
+        return plugin.getConfig().getDouble("start-multiplier", 1000.0);
+    }
+
+    /**
+     * Geometric factor: each subsequent milestone costs
+     * (previous milestone cost × this value).
+     */
+    public double getMultiplierFactor() {
+        return plugin.getConfig().getDouble("multiplier", 1.6);
     }
 
     public double getMaxMultiplier() {
-        return plugin.getConfig().getDouble("max-multiplier", 5.0);
+        return plugin.getConfig().getDouble("max-multiplier", 3.0);
+    }
+
+    // ---- Progress bar colours ---------------------------------------------
+    public Material getProgressBarCompletedColor() {
+        return resolvePane(plugin.getConfig().getString(
+                "progress-bar.completed-color", "LIME_STAINED_GLASS_PANE"),
+                Material.LIME_STAINED_GLASS_PANE);
+    }
+
+    public Material getProgressBarInProgressColor() {
+        return resolvePane(plugin.getConfig().getString(
+                "progress-bar.inprogress-color", "YELLOW_STAINED_GLASS_PANE"),
+                Material.YELLOW_STAINED_GLASS_PANE);
+    }
+
+    public Material getProgressBarLockedColor() {
+        return resolvePane(plugin.getConfig().getString(
+                "progress-bar.locked-color", "GRAY_STAINED_GLASS_PANE"),
+                Material.GRAY_STAINED_GLASS_PANE);
+    }
+
+    private Material resolvePane(String name, Material fallback) {
+        if (name == null) return fallback;
+        Material mat = Material.matchMaterial(name);
+        return mat != null ? mat : fallback;
     }
 
     // ---- GUI (main shop menu) ---------------------------------------------

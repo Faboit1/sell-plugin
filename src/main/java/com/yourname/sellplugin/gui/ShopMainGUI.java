@@ -2,7 +2,6 @@ package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
-import com.yourname.sellplugin.manager.PriceManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -16,14 +15,18 @@ import java.util.*;
 
 /**
  * Main 9×5 shop GUI.
- * Rows 1-4: black-glass background + centered "Sell All" button.
- * Row 5 (slots 36-44): up to 9 category buttons.
+ * Rows 1-4 (slots 0-35): black-glass background with a centred info panel.
+ * Row 5 (slots 36-44):   up to 9 category buttons.
+ *
+ * Layout of the info panel (rows 2-3, centre):
+ *   Slot 13 – separator pane
+ *   Slot 22 – player-stats icon showing total inventory sell value
+ *   Slot 31 – separator pane
  */
 public class ShopMainGUI implements InventoryHolder {
 
     private static final int ROWS = 5;
     private static final int SIZE = ROWS * 9; // 45
-    private static final int SELL_ALL_SLOT = 22; // centre of rows 1-4
 
     private final Inventory inv;
     private final SellPlugin plugin;
@@ -40,44 +43,62 @@ public class ShopMainGUI implements InventoryHolder {
     private void populate() {
         ConfigManager cfg = plugin.getConfigManager();
 
-        // --- Background glass ---
+        // --- Background glass (rows 1-4) ---
         ItemStack bg = makeItem(Material.BLACK_STAINED_GLASS_PANE, " ", Collections.emptyList());
         for (int i = 0; i < 36; i++) inv.setItem(i, bg);
 
-        // --- Sell All button (centre row 3) ---
-        Material sellMat = Material.matchMaterial(cfg.getSellAllMaterial());
-        if (sellMat == null) sellMat = Material.EMERALD_BLOCK;
-
-        List<String> lore = new ArrayList<>();
-        Set<String> categories = plugin.getPriceManager().getCategories();
-        for (String raw : cfg.getSellAllLore()) {
-            if (raw.contains("{multipliers}")) {
-                for (String cat : categories) {
-                    double m = plugin.getMultiplierManager().getMultiplier(player, cat);
-                    lore.add(ChatColor.translateAlternateColorCodes('&',
-                            "&e  \u25b6 &f" + cat + ": &a" + String.format("%.2f", m) + "x"));
-                }
-            } else {
-                lore.add(ChatColor.translateAlternateColorCodes('&', raw));
-            }
-        }
-        inv.setItem(SELL_ALL_SLOT, makeItem(sellMat, cfg.getSellAllName(), lore));
+        // --- Centre info panel (slot 22) ---
+        buildInfoPanel();
 
         // --- Category buttons in bottom row (slots 36-44) ---
         List<String> catOrder = cfg.getCategoryOrder();
         ItemStack catBg = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", Collections.emptyList());
         for (int slot = 36; slot <= 44; slot++) inv.setItem(slot, catBg);
 
-        int catSlot = 36;
         for (int i = 0; i < Math.min(9, catOrder.size()); i++) {
-            String catId = catOrder.get(i);
-            inv.setItem(catSlot + i, buildCategoryButton(catId));
+            inv.setItem(36 + i, buildCategoryButton(catOrder.get(i)));
         }
+    }
+
+    /**
+     * Builds a centred "Your Inventory" info icon at slot 22.
+     * Shows total sellable value and a per-category breakdown.
+     */
+    private void buildInfoPanel() {
+        double totalValue = 0.0;
+        int totalItems = 0;
+
+        List<String> catLines = new ArrayList<>();
+        for (String catId : plugin.getConfigManager().getCategoryOrder()) {
+            int cnt = plugin.getSellManager().countCategoryItems(player, catId);
+            if (cnt > 0) {
+                double val = plugin.getSellManager().calculateCategoryValue(player, catId);
+                totalValue += val;
+                totalItems += cnt;
+                catLines.add(ChatColor.GRAY + "  \u25b6 "
+                        + plugin.getConfigManager().getCategoryDisplayName(catId)
+                        + ChatColor.WHITE + ": " + ChatColor.GOLD + "$" + String.format("%.2f", val));
+            }
+        }
+
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.DARK_GRAY + "───────────────────");
+        if (totalItems == 0) {
+            lore.add(ChatColor.GRAY + "No sellable items in your inventory.");
+        } else {
+            lore.add(ChatColor.GRAY + "Total sellable items: " + ChatColor.WHITE + totalItems);
+            lore.add(ChatColor.GRAY + "Total value: " + ChatColor.GOLD + "$" + String.format("%.2f", totalValue));
+            lore.add(ChatColor.DARK_GRAY + "───────────────────");
+            lore.addAll(catLines);
+        }
+        lore.add(ChatColor.DARK_GRAY + "───────────────────");
+        lore.add(ChatColor.YELLOW + "Click a category below to sell!");
+
+        inv.setItem(22, makeItem(Material.CHEST, ChatColor.AQUA + "" + ChatColor.BOLD + "Your Inventory", lore));
     }
 
     private ItemStack buildCategoryButton(String catId) {
         ConfigManager cfg = plugin.getConfigManager();
-        PriceManager pm = plugin.getPriceManager();
 
         int itemCount = plugin.getSellManager().countCategoryItems(player, catId);
         double value = plugin.getSellManager().calculateCategoryValue(player, catId);
@@ -124,9 +145,5 @@ public class ShopMainGUI implements InventoryHolder {
         int idx = slot - 36;
         if (idx < order.size()) return order.get(idx);
         return null;
-    }
-
-    public boolean isSellAllSlot(int slot) {
-        return slot == SELL_ALL_SLOT;
     }
 }

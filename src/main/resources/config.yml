@@ -21,6 +21,9 @@ sounds-enabled: true
 # Sound to play on sell (Bukkit Sound enum name)
 sound-type: "ENTITY_EXPERIENCE_ORB_PICKUP"
 
+# Show a large title pop-up (+$amount) in the centre of the screen on sell?
+title-notification-enabled: true
+
 # ---- Economy ----------------------------------------------- #
 
 # VAULT or COINSENGINE

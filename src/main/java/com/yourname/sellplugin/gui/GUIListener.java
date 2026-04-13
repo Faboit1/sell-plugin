@@ -1,7 +1,6 @@
 package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
-import com.yourname.sellplugin.manager.SellManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -43,16 +42,6 @@ public class GUIListener implements Listener {
                     || !(e.getClickedInventory().getHolder() instanceof ShopMainGUI)) return;
 
             int slot = e.getSlot();
-
-            // Sell All button
-            if (shopGUI.isSellAllSlot(slot)) {
-                player.closeInventory();
-                SellManager.SellResult result = plugin.getSellManager().sellAll(player);
-                if (!result.success && result.earned == 0 && result.itemsSold == 0) {
-                    // nothing-to-sell already sent inside SellManager
-                }
-                return;
-            }
 
             // Category button (bottom row 36-44)
             String catId = shopGUI.getCategoryAtSlot(slot);

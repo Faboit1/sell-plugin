@@ -67,7 +67,7 @@ public class ConfirmSellGUI implements InventoryHolder {
 
         // Confirm button
         List<String> confirmLore = new ArrayList<>();
-        confirmLore.add(ChatColor.GRAY + SmallCaps.convert("sell all ") + ChatColor.WHITE + categoryId
+        confirmLore.add(ChatColor.GRAY + SmallCaps.convert("sell all ") + cfg.getCategoryDisplayName(categoryId)
                 + ChatColor.GRAY + SmallCaps.convert(" items"));
         confirmLore.add(ChatColor.GRAY + SmallCaps.convert("from your inventory."));
         if (itemCount > 0) {

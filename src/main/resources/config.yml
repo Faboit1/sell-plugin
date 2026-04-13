@@ -12,7 +12,7 @@ max-multiplier: 3.0
 # ---- Prefix / Notifications -------------------------------- #
 
 # Show a chat prefix message after selling?
-# Set to false to disable chat messages entirely.
+# Set to false to disable chat messages. Action bar is always shown.
 prefix-enabled: false
 
 # Play a sound when items are sold?

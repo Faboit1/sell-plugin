@@ -1,0 +1,110 @@
+package com.yourname.sellplugin.gui;
+
+import com.yourname.sellplugin.SellPlugin;
+import com.yourname.sellplugin.manager.ConfigManager;
+import com.yourname.sellplugin.util.SmallCaps;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Confirm/Cancel GUI for selling all items in a category.
+ * 27-slot (3 rows) GUI with Confirm (green) and Cancel (red) buttons.
+ */
+public class ConfirmSellGUI implements InventoryHolder {
+
+    private static final int SIZE = 27;
+
+    public static final int SLOT_CONFIRM = 11;
+    public static final int SLOT_CANCEL = 15;
+
+    private final Inventory inv;
+    private final SellPlugin plugin;
+    private final String categoryId;
+
+    public ConfirmSellGUI(SellPlugin plugin, Player player, String categoryId) {
+        this.plugin = plugin;
+        this.categoryId = categoryId;
+
+        ConfigManager cfg = plugin.getConfigManager();
+        String title = ChatColor.DARK_GRAY + "" + ChatColor.BOLD
+                + SmallCaps.convert("confirm sell: ")
+                + cfg.getCategoryDisplayName(categoryId);
+        this.inv = Bukkit.createInventory(this, SIZE, title);
+        populate(player);
+    }
+
+    private void populate(Player player) {
+        ConfigManager cfg = plugin.getConfigManager();
+
+        // Fill with configurable filler block
+        Material fillerMat = cfg.getFillerBlock();
+        ItemStack bg = makeItem(fillerMat, " ", Collections.emptyList());
+        for (int i = 0; i < SIZE; i++) inv.setItem(i, bg);
+
+        // Category info in centre (slot 13)
+        int itemCount = plugin.getSellManager().countCategoryItems(player, categoryId);
+        double value = plugin.getSellManager().calculateCategoryValue(player, categoryId);
+
+        List<String> infoLore = new ArrayList<>();
+        infoLore.add(ChatColor.DARK_GRAY + "───────────────────");
+        infoLore.add(ChatColor.GRAY + SmallCaps.convert("items: ") + ChatColor.WHITE + itemCount);
+        infoLore.add(ChatColor.GRAY + SmallCaps.convert("value: ")
+                + ChatColor.GOLD + "$" + String.format("%.2f", value));
+        infoLore.add(ChatColor.DARK_GRAY + "───────────────────");
+
+        inv.setItem(13, makeItem(cfg.getCategoryMaterial(categoryId),
+                cfg.getCategoryDisplayName(categoryId), infoLore));
+
+        // Confirm button
+        List<String> confirmLore = new ArrayList<>();
+        confirmLore.add(ChatColor.GRAY + SmallCaps.convert("sell all ") + ChatColor.WHITE + categoryId
+                + ChatColor.GRAY + SmallCaps.convert(" items"));
+        confirmLore.add(ChatColor.GRAY + SmallCaps.convert("from your inventory."));
+        if (itemCount > 0) {
+            confirmLore.add(ChatColor.GREEN + SmallCaps.convert("you will earn: ")
+                    + ChatColor.GOLD + "$" + String.format("%.2f", value));
+        }
+        inv.setItem(SLOT_CONFIRM, makeItem(Material.LIME_STAINED_GLASS_PANE,
+                ChatColor.GREEN + "" + ChatColor.BOLD + SmallCaps.convert("confirm"), confirmLore));
+
+        // Cancel button
+        List<String> cancelLore = new ArrayList<>();
+        cancelLore.add(ChatColor.GRAY + SmallCaps.convert("go back without selling."));
+        inv.setItem(SLOT_CANCEL, makeItem(Material.RED_STAINED_GLASS_PANE,
+                ChatColor.RED + "" + ChatColor.BOLD + SmallCaps.convert("cancel"), cancelLore));
+    }
+
+    private ItemStack makeItem(Material mat, String name, List<String> lore) {
+        ItemStack item = new ItemStack(mat);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(name);
+            if (!lore.isEmpty()) meta.setLore(lore);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    @Override
+    public Inventory getInventory() {
+        return inv;
+    }
+
+    public void open(Player p) {
+        p.openInventory(inv);
+    }
+
+    public String getCategoryId() {
+        return categoryId;
+    }
+}

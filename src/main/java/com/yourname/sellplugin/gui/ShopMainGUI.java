@@ -37,8 +37,9 @@ public class ShopMainGUI implements InventoryHolder {
     public ShopMainGUI(SellPlugin plugin, Player player) {
         this.plugin = plugin;
         this.player = player;
-        ConfigManager cfg = plugin.getConfigManager();
-        this.inv = Bukkit.createInventory(this, SIZE, cfg.getGuiTitle());
+        // Title in small caps: "put items here to sell"
+        String title = ChatColor.DARK_GRAY + "" + ChatColor.BOLD + SmallCaps.convert("put items here to sell");
+        this.inv = Bukkit.createInventory(this, SIZE, title);
         populate();
     }
 

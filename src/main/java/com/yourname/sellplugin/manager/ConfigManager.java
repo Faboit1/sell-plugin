@@ -33,6 +33,13 @@ public class ConfigManager {
         return plugin.getConfig().getInt("gui.size", 45);
     }
 
+    // ---- Filler block -----------------------------------------------------
+    public Material getFillerBlock() {
+        String matName = plugin.getConfig().getString("filler-block", "BLACK_STAINED_GLASS_PANE");
+        Material mat = Material.matchMaterial(matName);
+        return mat != null ? mat : Material.BLACK_STAINED_GLASS_PANE;
+    }
+
     // ---- SellAll GUI (simple /sellall GUI) --------------------------------
     public String getSellAllGuiTitle() {
         return color(plugin.getConfig().getString("sell-all-gui.title", "&8&lSell All Items"));
@@ -60,7 +67,7 @@ public class ConfigManager {
 
     // ---- Prefix / sounds --------------------------------------------------
     public boolean isPrefixEnabled() {
-        return plugin.getConfig().getBoolean("prefix-enabled", true);
+        return plugin.getConfig().getBoolean("prefix-enabled", false);
     }
 
     public boolean areSoundsEnabled() {
@@ -72,7 +79,7 @@ public class ConfigManager {
     }
 
     public boolean isTitleNotificationEnabled() {
-        return plugin.getConfig().getBoolean("title-notification-enabled", true);
+        return plugin.getConfig().getBoolean("title-notification-enabled", false);
     }
 
     // ---- Economy ----------------------------------------------------------
@@ -122,6 +129,12 @@ public class ConfigManager {
                 : "";
         String msg = plugin.getConfig().getString("messages." + path, "");
         return color(prefix + msg);
+    }
+
+    // ---- Reload -----------------------------------------------------------
+    public void reload() {
+        plugin.reloadConfig();
+        plugin.getPriceManager().loadPrices();
     }
 
     // ---- Helpers ----------------------------------------------------------

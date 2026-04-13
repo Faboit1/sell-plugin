@@ -42,8 +42,9 @@ public class SellAllGUI implements InventoryHolder {
     private void populate(Player player) {
         ConfigManager cfg = plugin.getConfigManager();
 
-        // Background
-        ItemStack bg = makeItem(Material.BLACK_STAINED_GLASS_PANE, " ", Collections.emptyList());
+        // Background (uses configurable filler block)
+        Material fillerMat = cfg.getFillerBlock();
+        ItemStack bg = makeItem(fillerMat, " ", Collections.emptyList());
         for (int i = 0; i < inv.getSize(); i++) inv.setItem(i, bg);
 
         // Sell All button

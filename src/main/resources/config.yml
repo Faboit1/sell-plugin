@@ -7,7 +7,7 @@
 multiplier-step: 0.001
 
 # Maximum multiplier cap (used for progress bar display)
-max-multiplier: 5.0
+max-multiplier: 3.0
 
 # ---- Prefix / Notifications -------------------------------- #
 

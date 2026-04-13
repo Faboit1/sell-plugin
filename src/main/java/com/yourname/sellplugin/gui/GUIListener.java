@@ -1,12 +1,21 @@
 package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class GUIListener implements Listener {
 
@@ -16,17 +25,33 @@ public class GUIListener implements Listener {
         this.plugin = plugin;
     }
 
-    // Cancel all drags while any of our GUIs are open
+    // ── Drag handling ────────────────────────────────────────────────────────
+
     @EventHandler
     public void onDrag(InventoryDragEvent e) {
         InventoryHolder holder = e.getView().getTopInventory().getHolder();
-        if (holder instanceof ShopMainGUI
-                || holder instanceof CategoryProgressGUI
+
+        // ShopMainGUI: allow drags in the item-placement area (0-35),
+        // cancel if any slot touches the protected bottom row (36-44).
+        if (holder instanceof ShopMainGUI) {
+            for (int slot : e.getRawSlots()) {
+                if (slot >= ShopMainGUI.BOTTOM_ROW_START && slot <= 44) {
+                    e.setCancelled(true);
+                    return;
+                }
+            }
+            return; // allow the drag
+        }
+
+        // All other plugin GUIs: cancel drags entirely.
+        if (holder instanceof CategoryProgressGUI
                 || holder instanceof CategoryItemsGUI
                 || holder instanceof SellAllGUI) {
             e.setCancelled(true);
         }
     }
+
+    // ── Click handling ───────────────────────────────────────────────────────
 
     @EventHandler
     public void onClick(InventoryClickEvent e) {
@@ -37,17 +62,34 @@ public class GUIListener implements Listener {
 
         // ── ShopMainGUI ──────────────────────────────────────────────────────
         if (holder instanceof ShopMainGUI shopGUI) {
-            e.setCancelled(true);
-            if (e.getClickedInventory() == null
-                    || !(e.getClickedInventory().getHolder() instanceof ShopMainGUI)) return;
+            // Determine which inventory was clicked
+            Inventory clicked = e.getClickedInventory();
 
-            int slot = e.getSlot();
-
-            // Category button (bottom row 36-44)
-            String catId = shopGUI.getCategoryAtSlot(slot);
-            if (catId != null) {
-                new CategoryProgressGUI(plugin, player, catId).open(player);
+            // Click in player inventory (bottom) – allow freely (including shift-click)
+            if (clicked != null && clicked.equals(player.getInventory())) {
+                return; // allow
             }
+
+            // Click in the shop GUI (top inventory)
+            if (clicked != null && clicked.getHolder() instanceof ShopMainGUI) {
+                int slot = e.getSlot();
+
+                // Bottom row (36-44): protected – handle category clicks
+                if (slot >= ShopMainGUI.BOTTOM_ROW_START) {
+                    e.setCancelled(true);
+                    String catId = shopGUI.getCategoryAtSlot(slot);
+                    if (catId != null) {
+                        new CategoryProgressGUI(plugin, player, catId).open(player);
+                    }
+                    return;
+                }
+
+                // Slots 0-35: allow item placement / removal
+                return;
+            }
+
+            // Safety: cancel anything else
+            e.setCancelled(true);
             return;
         }
 
@@ -64,12 +106,8 @@ public class GUIListener implements Listener {
                 return;
             }
 
-            if (slot == CategoryProgressGUI.SLOT_VIEW_ITEMS) {
-                new CategoryItemsGUI(plugin, player, catProgressGUI.getCategoryId(), 0).open(player);
-                return;
-            }
-
-            if (slot == CategoryProgressGUI.SLOT_SELL_CAT) {
+            // Click the category item at the start of the path → sell category
+            if (catProgressGUI.isSellSlot(slot)) {
                 player.closeInventory();
                 plugin.getSellManager().sellCategory(player, catProgressGUI.getCategoryId());
                 return;
@@ -127,6 +165,79 @@ public class GUIListener implements Listener {
                 player.closeInventory();
                 plugin.getSellManager().sellAll(player);
             }
+        }
+    }
+
+    // ── Close handling – sell items placed in ShopMainGUI ────────────────────
+
+    @EventHandler
+    public void onClose(InventoryCloseEvent e) {
+        if (!(e.getPlayer() instanceof Player player)) return;
+
+        InventoryHolder holder = e.getView().getTopInventory().getHolder();
+        if (!(holder instanceof ShopMainGUI shopGUI)) return;
+
+        Inventory top = e.getView().getTopInventory();
+        SellPlugin pl = shopGUI.getPlugin();
+
+        double totalEarned = 0.0;
+        int totalItems = 0;
+        Map<String, Integer> categorySales = new HashMap<>();
+        List<ItemStack> sellableItems = new ArrayList<>();
+        List<ItemStack> nonSellableItems = new ArrayList<>();
+
+        // Classify items in slots 0-35 (the item-placement area)
+        for (int i = 0; i < ShopMainGUI.BOTTOM_ROW_START; i++) {
+            ItemStack item = top.getItem(i);
+            if (item == null || item.getType() == Material.AIR) continue;
+
+            String key = pl.getPriceManager().getItemKey(item);
+            if (key == null || pl.getPriceManager().getPrice(key) <= 0) {
+                nonSellableItems.add(item);
+                continue;
+            }
+
+            double base = pl.getPriceManager().getPrice(key);
+            String cat = pl.getPriceManager().getCategory(key);
+            double mult = pl.getMultiplierManager().getMultiplier(player, cat);
+            int amount = item.getAmount();
+            totalEarned += base * mult * amount;
+            totalItems += amount;
+            categorySales.merge(cat, amount, Integer::sum);
+            sellableItems.add(item);
+        }
+
+        // Always return non-sellable items
+        for (ItemStack item : nonSellableItems) {
+            returnItem(player, item);
+        }
+
+        // Process sellable items
+        if (totalEarned > 0) {
+            boolean ok = pl.getEconomyManager().deposit(player, totalEarned);
+            if (ok) {
+                for (Map.Entry<String, Integer> entry : categorySales.entrySet()) {
+                    pl.getMultiplierManager().addSales(player, entry.getKey(), entry.getValue());
+                }
+                pl.getSellManager().sendSellNotification(player, totalEarned, totalItems);
+            } else {
+                // Economy error – return sellable items too
+                player.sendMessage(pl.getConfigManager().getMessage("economy-error"));
+                for (ItemStack item : sellableItems) {
+                    returnItem(player, item);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns an item to the player's inventory; drops it at their feet if
+     * the inventory is full.
+     */
+    private void returnItem(Player player, ItemStack item) {
+        HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(item);
+        for (ItemStack drop : leftover.values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), drop);
         }
     }
 }

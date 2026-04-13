@@ -71,7 +71,9 @@ public class MultiplierManager {
         int itemsSold = stats.getOrDefault(category, 0);
         
         double step = plugin.getConfigManager().getMultiplierStep();
-        return 1.0 + (itemsSold * step);
+        double max = plugin.getConfigManager().getMaxMultiplier();
+        double mult = 1.0 + (itemsSold * step);
+        return Math.min(mult, max);
     }
 
     public void addSales(Player p, String category, int amount) {

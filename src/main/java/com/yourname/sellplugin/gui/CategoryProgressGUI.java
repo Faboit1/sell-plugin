@@ -39,6 +39,9 @@ public class CategoryProgressGUI implements InventoryHolder {
 
     private static final int SIZE = 54;
 
+    /** Floating-point tolerance for milestone comparisons. */
+    private static final double EPSILON = 0.001;
+
     /** Back button slot (bottom-right area). */
     public static final int SLOT_BACK = 53;
 
@@ -141,9 +144,9 @@ public class CategoryProgressGUI implements InventoryHolder {
             double milestone = MILESTONES[i];
 
             // Determine colour state
-            boolean completed = currentMultiplier >= milestone + 0.1 - 0.001;
+            boolean completed = currentMultiplier >= milestone + 0.1 - EPSILON;
             boolean inProgress = !completed
-                    && currentMultiplier >= milestone - 0.001;
+                    && currentMultiplier >= milestone - EPSILON;
 
             Material paneMat;
             ChatColor nameColour;

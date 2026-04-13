@@ -47,7 +47,7 @@ public class CategoryProgressGUI implements InventoryHolder {
     /**
      * W-shape path (21 nodes).
      *
-     * Two connected U-shapes form a W across rows 0-4.
+     * Two connected U-shapes form a W across rows 1-4 (U1) and rows 0-4 (U2).
      * Slot layout reference (row × col, 0-indexed):
      *   Col:  0   1   2   3   4   5   6   7   8
      *   Row0: 0   1   2   3   4   5   6   7   8
@@ -57,19 +57,19 @@ public class CategoryProgressGUI implements InventoryHolder {
      *   Row4: 36  37  38  39  40  41  42  43  44
      *   Row5: 45  46  47  48  49  50  51  52  53
      *
-     * Visual W (cols 1-7, rows 0-4):
-     *   [1]  .   .   .   .   .  [6][7]
-     *   [10] .  [12][13] .  [15] .   .
-     *   [19] .  [21][22] .  [24] .   .
-     *   [28] .  [30][31] .  [33] .   .
-     *   [37][38][39][40][41][42] .   .
+     * Visual W (cols 1-8, rows 0-4):
+     *    .   .   .   .   .   .  [7] [8]
+     *   [10] .  [12][13][14] .  [16] .
+     *   [19] .  [21] .  [23] .  [25] .
+     *   [28] .  [30] .  [32] .  [34] .
+     *   [37][38][39] .  [41][42][43] .
      *
-     * U1: ↓ col1 (rows 0-4) → right 2 (row4) → ↑ col3 (rows 4-1) → right 1 (row1)
-     * U2: ↓ col4 (rows 1-4) → right 2 (row4) → ↑ col6 (rows 4-0) → right 1 (row0)
+     * U1: ↓ col1 (rows 1-4) → right 2 (row4) → ↑ col3 (rows 4-1) → right 2 (row1)
+     * U2: ↓ col5 (rows 1-4) → right 2 (row4) → ↑ col7 (rows 4-0) → right 1 (row0)
      */
     private static final int[] PATH = {
-             1, 10, 19, 28, 37, 38, 39, 30, 21, 12, 13,   // U1: down col1, right, up col3, step right
-            22, 31, 40, 41, 42, 33, 24, 15,  6,  7        // U2: down col4, right, up col6, step right
+            10, 19, 28, 37, 38, 39, 30, 21, 12, 13, 14,   // U1: down col1, right, up col3, step right
+            23, 32, 41, 42, 43, 34, 25, 16,  7,  8        // U2: down col5, right, up col7, step right
     };
 
     /** Multiplier value for each path node: 1.0, 1.1, 1.2 … 3.0. */

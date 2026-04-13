@@ -159,7 +159,7 @@ public class MultiplierManager {
     }
 
     private List<LeaderboardEntry> buildLeaderboard() {
-        Map<UUID, Double> totals = new LinkedHashMap<>();
+        Map<UUID, Double> totals = new HashMap<>();
         Map<UUID, String> names  = new HashMap<>();
 
         // Add online/cached players first

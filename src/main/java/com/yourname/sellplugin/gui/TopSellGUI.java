@@ -83,17 +83,16 @@ public class TopSellGUI implements InventoryHolder {
         int end   = Math.min(start + ENTRIES_PER_PAGE, entries.size());
 
         for (int i = start; i < end; i++) {
-            int slot = i - start;
+            final int slot = i - start;
             LeaderboardEntry entry = entries.get(i);
             int rank = i + 1;
             // Schedule each skull with a small staggered delay to avoid any
             // potential server-side profile look-up spikes (2 ticks apart).
-            final int finalSlot = slot;
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (viewer.isOnline()) {
-                    inv.setItem(finalSlot, buildEntryHead(entry, rank));
+                    inv.setItem(slot, buildEntryHead(entry, rank));
                 }
-            }, (long) (slot) * 2L);
+            }, (long) slot * 2L);
         }
 
         // ── Navigation bar (row 5) ──────────────────────────────────────────

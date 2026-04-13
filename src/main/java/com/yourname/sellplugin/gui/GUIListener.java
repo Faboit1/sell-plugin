@@ -210,6 +210,7 @@ public class GUIListener implements Listener {
             }
 
             if (slot == ConfirmSellAllGUI.SLOT_CANCEL) {
+                player.closeInventory();
                 new SellAllGUI(plugin, player).open(player);
             }
         }

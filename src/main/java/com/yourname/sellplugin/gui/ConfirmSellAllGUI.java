@@ -2,6 +2,7 @@ package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
+import com.yourname.sellplugin.manager.SellManager;
 import com.yourname.sellplugin.util.SmallCaps;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -44,8 +45,9 @@ public class ConfirmSellAllGUI implements InventoryHolder {
         for (int i = 0; i < SIZE; i++) inv.setItem(i, bg);
 
         // Info item in centre (slot 13)
-        int itemCount = plugin.getSellManager().countAllItems(player);
-        double value   = plugin.getSellManager().calculateAllValue(player);
+        SellManager.SellPreview preview = plugin.getSellManager().previewSellAll(player);
+        int itemCount = preview.itemCount;
+        double value   = preview.value;
 
         List<String> infoLore = new ArrayList<>();
         infoLore.add(ChatColor.DARK_GRAY + "───────────────────");

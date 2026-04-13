@@ -45,12 +45,9 @@ public class CategoryProgressGUI implements InventoryHolder {
     public static final int SLOT_BACK = 53;
 
     /**
-     * Diagonal V-shape path (21 nodes).
+     * W-shape path (21 nodes).
      *
-     * Three connected V-shapes march diagonally from the top-left to the
-     * bottom-right of the inventory.  Each V has the same step pattern:
-     *   diagonal ↘ (or ↙), straight ↓, → →, straight ↑, diagonal ↗ (or ↖)
-     *
+     * Two connected U-shapes form a W across rows 0-4.
      * Slot layout reference (row × col, 0-indexed):
      *   Col:  0   1   2   3   4   5   6   7   8
      *   Row0: 0   1   2   3   4   5   6   7   8
@@ -60,29 +57,19 @@ public class CategoryProgressGUI implements InventoryHolder {
      *   Row4: 36  37  38  39  40  41  42  43  44
      *   Row5: 45  46  47  48  49  50  51  52  53
      *
-     * V1 (rows 0-2, left):   1→9→18→19→20→11→3
-     *   diag↙ : (r0c1)→(r1c0)   straight↓: (r1c0)→(r2c0)
-     *   →→    : (r2c0)→(r2c1)→(r2c2)
-     *   straight↑: (r2c2)→(r1c2)  diag↗: (r1c2)→(r0c3)
+     * Visual W (cols 1-7, rows 0-4):
+     *   [1]  .   .   .   .   .  [6][7]
+     *   [10] .  [12][13] .  [15] .   .
+     *   [19] .  [21][22] .  [24] .   .
+     *   [28] .  [30][31] .  [33] .   .
+     *   [37][38][39][40][41][42] .   .
      *
-     * connector: 3(r0c3) → 13(r1c4)  [diagonal ↘, +10]
-     *
-     * V2 (rows 1-3, middle): 13→21→30→31→32→23→15
-     *   diag↙ : (r1c4)→(r2c3)   straight↓: (r2c3)→(r3c3)
-     *   →→    : (r3c3)→(r3c4)→(r3c5)
-     *   straight↑: (r3c5)→(r2c5)  diag↗: (r2c5)→(r1c6)
-     *
-     * connector: 15(r1c6) → 25(r2c7)  [diagonal ↘, +10]
-     *
-     * V3 (rows 2-4, right):  25→33→42→43→44→35→26
-     *   diag↙ : (r2c7)→(r3c6)   straight↓: (r3c6)→(r4c6)
-     *   →→    : (r4c6)→(r4c7)→(r4c8)
-     *   straight↑: (r4c8)→(r3c8)  straight↑: (r3c8)→(r2c8)
+     * U1: ↓ col1 (rows 0-4) → right 2 (row4) → ↑ col3 (rows 4-1) → right 1 (row1)
+     * U2: ↓ col4 (rows 1-4) → right 2 (row4) → ↑ col6 (rows 4-0) → right 1 (row0)
      */
     private static final int[] PATH = {
-             1,  9, 18, 19, 20, 11,  3,   // V1: rows 0-2 (left)
-            13, 21, 30, 31, 32, 23, 15,   // V2: rows 1-3 (middle)
-            25, 33, 42, 43, 44, 35, 26    // V3: rows 2-4 (right)
+             1, 10, 19, 28, 37, 38, 39, 30, 21, 12, 13,   // U1: down col1, right, up col3, step right
+            22, 31, 40, 41, 42, 33, 24, 15,  6,  7        // U2: down col4, right, up col6, step right
     };
 
     /** Multiplier value for each path node: 1.0, 1.1, 1.2 … 3.0. */

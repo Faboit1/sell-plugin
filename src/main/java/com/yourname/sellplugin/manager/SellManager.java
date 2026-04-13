@@ -117,6 +117,26 @@ public class SellManager {
     }
 
     // ---------------------------------------------------------------
+    // Preview result (item count + value) for selling all items
+    // ---------------------------------------------------------------
+    public SellPreview previewSellAll(Player player) {
+        int itemCount = 0;
+        double value = 0.0;
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item == null || item.getType() == Material.AIR) continue;
+            String key = plugin.getPriceManager().getItemKey(item);
+            if (key == null) continue;
+            double base = plugin.getPriceManager().getPrice(key);
+            if (base <= 0) continue;
+            String cat = plugin.getPriceManager().getCategory(key);
+            double mult = plugin.getMultiplierManager().getMultiplier(player, cat);
+            itemCount += item.getAmount();
+            value += base * mult * item.getAmount();
+        }
+        return new SellPreview(itemCount, value);
+    }
+
+    // ---------------------------------------------------------------
     // Count how many sellable items of a category the player has
     // ---------------------------------------------------------------
     public int countCategoryItems(Player player, String category) {
@@ -226,6 +246,19 @@ public class SellManager {
             this.earned = earned;
             this.itemsSold = itemsSold;
             this.success = success;
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Preview result for sell-all (no inventory modification)
+    // ---------------------------------------------------------------
+    public static class SellPreview {
+        public final int itemCount;
+        public final double value;
+
+        public SellPreview(int itemCount, double value) {
+            this.itemCount = itemCount;
+            this.value = value;
         }
     }
 }

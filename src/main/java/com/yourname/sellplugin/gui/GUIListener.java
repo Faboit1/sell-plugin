@@ -47,7 +47,8 @@ public class GUIListener implements Listener {
         if (holder instanceof CategoryProgressGUI
                 || holder instanceof CategoryItemsGUI
                 || holder instanceof SellAllGUI
-                || holder instanceof ConfirmSellGUI) {
+                || holder instanceof ConfirmSellGUI
+                || holder instanceof ConfirmSellAllGUI) {
             e.setCancelled(true);
         }
     }
@@ -190,8 +191,27 @@ public class GUIListener implements Listener {
                     || !(e.getClickedInventory().getHolder() instanceof SellAllGUI)) return;
 
             if (e.getSlot() == sellAllGUI.getSellAllSlot()) {
+                new ConfirmSellAllGUI(plugin, player).open(player);
+            }
+        }
+
+        // ── ConfirmSellAllGUI ─────────────────────────────────────────────────
+        if (holder instanceof ConfirmSellAllGUI) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() == null
+                    || !(e.getClickedInventory().getHolder() instanceof ConfirmSellAllGUI)) return;
+
+            int slot = e.getSlot();
+
+            if (slot == ConfirmSellAllGUI.SLOT_CONFIRM) {
                 player.closeInventory();
                 plugin.getSellManager().sellAll(player);
+                return;
+            }
+
+            if (slot == ConfirmSellAllGUI.SLOT_CANCEL) {
+                player.closeInventory();
+                new SellAllGUI(plugin, player).open(player);
             }
         }
     }

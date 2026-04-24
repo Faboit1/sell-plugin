@@ -175,8 +175,8 @@ public class CategoryItemsGUI implements InventoryHolder {
                 + ChatColor.GREEN + "$" + NumberFormatter.format(base));
         if (daily > 0) {
             lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Mult:  "
-                    + ChatColor.AQUA + String.format("%.2f", earned) + "x"
-                    + ChatColor.GOLD + " (+" + String.format("%.2f", daily) + "x today)");
+                    + ChatColor.AQUA + String.format("%.2fx", earned)
+                    + ChatColor.GOLD + " (+" + String.format("%.2fx", daily) + " today)");
         } else {
             lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Mult:  "
                     + ChatColor.AQUA + String.format("%.2fx", mult));

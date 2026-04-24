@@ -88,11 +88,7 @@ public class DailyBonusManager {
      * Returns 0.0 if the category is not boosted.
      */
     public double getDailyBonus(String category) {
-        // Lazy daily reset – re-roll when a new day is first accessed
-        String today = LocalDate.now().toString();
-        if (!today.equals(currentDate)) {
-            rollNewBonuses(today);
-        }
+        checkAndRollIfNeeded();
         return boostedCategories.contains(category)
                 ? plugin.getConfigManager().getDailyBonusAmount()
                 : 0.0;
@@ -103,8 +99,15 @@ public class DailyBonusManager {
      * Triggers a lazy reset if necessary.
      */
     public Set<String> getBoostedCategories() {
-        // Ensure lazily reset
-        getDailyBonus("__check__");
+        checkAndRollIfNeeded();
         return Collections.unmodifiableSet(boostedCategories);
+    }
+
+    /** Rolls new bonuses if the current stored date no longer matches today. */
+    private void checkAndRollIfNeeded() {
+        String today = LocalDate.now().toString();
+        if (!today.equals(currentDate)) {
+            rollNewBonuses(today);
+        }
     }
 }

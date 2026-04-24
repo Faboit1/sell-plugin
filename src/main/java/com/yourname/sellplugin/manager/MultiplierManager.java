@@ -111,6 +111,18 @@ public class MultiplierManager {
     }
 
     /**
+     * Returns the player's total effective multiplier for a category,
+     * which is the earned multiplier <em>plus</em> today's daily bonus (if any).
+     * Use this for all sell calculations and display.
+     */
+    public double getEffectiveMultiplier(Player p, String category) {
+        double earned = getMultiplier(p, category);
+        DailyBonusManager dbm = plugin.getDailyBonusManager();
+        if (dbm == null) return earned;
+        return earned + dbm.getDailyBonus(category);
+    }
+
+    /**
      * Returns the cumulative money required to reach milestone {@code milestoneIndex}
      * (0-based). Index 0 = 1.0x (no cost). Index 1 = 1.1x (costs startMultiplier).
      */

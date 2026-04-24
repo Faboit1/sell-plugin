@@ -3,6 +3,8 @@ package com.yourname.sellplugin.gui;
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.PriceManager;
+import com.yourname.sellplugin.util.NumberFormatter;
+import com.yourname.sellplugin.util.SmallCaps;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -138,12 +140,15 @@ public class CategoryItemsGUI implements InventoryHolder {
         double catValue = plugin.getSellManager().calculateCategoryValue(player, categoryId);
         int catCount    = plugin.getSellManager().countCategoryItems(player, categoryId);
         List<String> sellLore = new ArrayList<>();
-        sellLore.add(ChatColor.GRAY + "Sell all " + ChatColor.WHITE + categoryId
-                + ChatColor.GRAY + " items from inventory.");
+        sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("category: ")
+                + ChatColor.WHITE + categoryId);
         if (catCount > 0) {
-            sellLore.add(ChatColor.GREEN + "You will earn: $" + String.format("%.2f", catValue));
+            sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("items: ")
+                    + ChatColor.WHITE + NumberFormatter.format(catCount));
+            sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("earn: ")
+                    + ChatColor.GREEN + "$" + NumberFormatter.format(catValue));
         } else {
-            sellLore.add(ChatColor.RED + "No items to sell.");
+            sellLore.add(ChatColor.RED + " ▸ " + SmallCaps.convert("no items to sell."));
         }
         inv.setItem(SLOT_SELL_ALL, makeItem(
                 cfg.getIconMaterial("sell-category", Material.GOLD_INGOT),
@@ -156,18 +161,29 @@ public class CategoryItemsGUI implements InventoryHolder {
     private ItemStack buildItemDisplay(String itemKey) {
         PriceManager pm = plugin.getPriceManager();
         double base = pm.getPrice(itemKey);
-        double mult = plugin.getMultiplierManager().getMultiplier(player, categoryId);
+        double earned = plugin.getMultiplierManager().getMultiplier(player, categoryId);
+        double daily  = plugin.getDailyBonusManager().getDailyBonus(categoryId);
+        double mult   = earned + daily;
         double effective = base * mult;
 
         // Build correct ItemStack (handles potions with PotionMeta)
         ItemStack item = resolveItemStack(itemKey);
 
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.DARK_GRAY + "─────────────────────");
-        lore.add(ChatColor.GRAY + "Base price:   " + ChatColor.GREEN + "$" + String.format("%.2f", base));
-        lore.add(ChatColor.GRAY + "Multiplier:   " + ChatColor.AQUA + String.format("%.2fx", mult));
-        lore.add(ChatColor.GRAY + "Sell price:   " + ChatColor.GREEN + "$" + String.format("%.2f", effective));
-        lore.add(ChatColor.DARK_GRAY + "─────────────────────");
+        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━");
+        lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Base:  "
+                + ChatColor.GREEN + "$" + NumberFormatter.format(base));
+        if (daily > 0) {
+            lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Mult:  "
+                    + ChatColor.AQUA + String.format("%.2fx", earned)
+                    + ChatColor.GOLD + " (+" + String.format("%.2fx", daily) + " today)");
+        } else {
+            lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Mult:  "
+                    + ChatColor.AQUA + String.format("%.2fx", mult));
+        }
+        lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Price: "
+                + ChatColor.GREEN + "$" + NumberFormatter.format(effective));
+        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━");
 
         String displayName = ChatColor.WHITE + formatItemName(itemKey);
 

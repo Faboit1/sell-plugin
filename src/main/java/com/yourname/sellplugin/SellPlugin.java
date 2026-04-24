@@ -6,6 +6,7 @@ import com.yourname.sellplugin.command.TopSellCommand;
 import com.yourname.sellplugin.economy.EconomyManager;
 import com.yourname.sellplugin.gui.GUIListener;
 import com.yourname.sellplugin.manager.ConfigManager;
+import com.yourname.sellplugin.manager.DailyBonusManager;
 import com.yourname.sellplugin.manager.MultiplierManager;
 import com.yourname.sellplugin.manager.PriceManager;
 import com.yourname.sellplugin.manager.SellManager;
@@ -17,6 +18,7 @@ public class SellPlugin extends JavaPlugin {
     private ConfigManager configManager;
     private PriceManager priceManager;
     private MultiplierManager multiplierManager;
+    private DailyBonusManager dailyBonusManager;
     private SellManager sellManager;
 
     @Override
@@ -28,6 +30,7 @@ public class SellPlugin extends JavaPlugin {
         priceManager.loadPrices();
 
         multiplierManager = new MultiplierManager(this);
+        dailyBonusManager = new DailyBonusManager(this);
         sellManager = new SellManager(this);
 
         economyManager = new EconomyManager(this);
@@ -57,5 +60,6 @@ public class SellPlugin extends JavaPlugin {
     public ConfigManager getConfigManager()    { return configManager; }
     public PriceManager getPriceManager()      { return priceManager; }
     public MultiplierManager getMultiplierManager() { return multiplierManager; }
+    public DailyBonusManager getDailyBonusManager() { return dailyBonusManager; }
     public SellManager getSellManager()        { return sellManager; }
 }

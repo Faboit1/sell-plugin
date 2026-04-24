@@ -12,6 +12,16 @@ multiplier: 1.6
 # Maximum multiplier cap (used for progress bar display)
 max-multiplier: 3.0
 
+# ---- Daily Category Bonus ------------------------------------------ #
+# Every day a random selection of categories receive a flat bonus added
+# to the player's earned multiplier (not multiplied).
+# e.g. bonus-amount: 0.4 means fishing at 1.2x earns 1.6x that day.
+daily-bonus:
+  # How many categories get the daily boost (randomly chosen)
+  boosted-count: 2
+  # Flat amount added to the multiplier for boosted categories
+  bonus-amount: 0.4
+
 # ---- Progress bar (snake path) colours ------------------------------------ #
 # Must be valid glass-pane Material names.
 progress-bar:

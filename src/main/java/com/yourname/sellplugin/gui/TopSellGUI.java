@@ -3,6 +3,7 @@ package com.yourname.sellplugin.gui;
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.MultiplierManager.LeaderboardEntry;
+import com.yourname.sellplugin.util.NumberFormatter;
 import com.yourname.sellplugin.util.SmallCaps;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -152,10 +153,10 @@ public class TopSellGUI implements InventoryHolder {
 
         // Lore: total earnings
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.DARK_GRAY + "───────────────────");
-        lore.add(ChatColor.GRAY + SmallCaps.convert("total earned: ")
-                + ChatColor.GREEN + "$" + String.format("%.2f", entry.totalEarnings));
-        lore.add(ChatColor.DARK_GRAY + "───────────────────");
+        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
+        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("total earned: ")
+                + ChatColor.GREEN + "$" + NumberFormatter.format(entry.totalEarnings));
+        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
         meta.setLore(lore);
 
         skull.setItemMeta(meta);

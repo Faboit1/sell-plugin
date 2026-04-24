@@ -1,6 +1,7 @@
 package com.yourname.sellplugin.manager;
 
 import com.yourname.sellplugin.SellPlugin;
+import com.yourname.sellplugin.util.NumberFormatter;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -39,7 +40,7 @@ public class SellManager {
             if (base <= 0) continue;
 
             String cat = plugin.getPriceManager().getCategory(key);
-            double mult = plugin.getMultiplierManager().getMultiplier(player, cat);
+            double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
             int amount = item.getAmount();
             double earned = base * mult * amount;
             totalEarned += earned;
@@ -72,7 +73,7 @@ public class SellManager {
             double base = plugin.getPriceManager().getPrice(key);
             if (base <= 0) continue;
 
-            double mult = plugin.getMultiplierManager().getMultiplier(player, cat);
+            double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
             int amount = item.getAmount();
             double earned = base * mult * amount;
             totalEarned += earned;
@@ -96,7 +97,7 @@ public class SellManager {
         if (base <= 0) return new SellResult(0, 0, false);
 
         String cat = plugin.getPriceManager().getCategory(itemKey);
-        double mult = plugin.getMultiplierManager().getMultiplier(player, cat);
+        double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
 
         for (int i = 0; i < player.getInventory().getSize(); i++) {
             ItemStack item = player.getInventory().getItem(i);
@@ -129,7 +130,7 @@ public class SellManager {
             double base = plugin.getPriceManager().getPrice(key);
             if (base <= 0) continue;
             String cat = plugin.getPriceManager().getCategory(key);
-            double mult = plugin.getMultiplierManager().getMultiplier(player, cat);
+            double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
             itemCount += item.getAmount();
             value += base * mult * item.getAmount();
         }
@@ -164,7 +165,7 @@ public class SellManager {
             if (!category.equalsIgnoreCase(cat)) continue;
             double base = plugin.getPriceManager().getPrice(key);
             if (base <= 0) continue;
-            double mult = plugin.getMultiplierManager().getMultiplier(player, cat);
+            double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
             total += base * mult * item.getAmount();
         }
         return total;
@@ -199,7 +200,7 @@ public class SellManager {
     // Title and chat are optional via config
     // ---------------------------------------------------------------
     public void sendSellNotification(Player player, double amount, int itemCount) {
-        String formatted = String.format("%.2f", amount);
+        String formatted = NumberFormatter.format(amount);
 
         // Action bar: always shown – lime color (&a) "+$amount"
         String actionBarText = ChatColor.GREEN + "+$" + formatted;
@@ -209,7 +210,7 @@ public class SellManager {
         if (plugin.getConfigManager().isTitleNotificationEnabled()) {
             player.sendTitle(
                     ChatColor.GREEN + "+$" + formatted,
-                    ChatColor.GRAY + "You sold " + itemCount + " item" + (itemCount == 1 ? "" : "s"),
+                    ChatColor.GRAY + "You sold " + NumberFormatter.format(itemCount) + " item" + (itemCount == 1 ? "" : "s"),
                     10, 40, 20
             );
         }
@@ -228,7 +229,7 @@ public class SellManager {
         // Chat message: only if prefix enabled
         if (plugin.getConfigManager().isPrefixEnabled()) {
             String msg = plugin.getConfigManager().getMessage("sold-items")
-                    .replace("{amount}", String.valueOf(itemCount))
+                    .replace("{amount}", NumberFormatter.format(itemCount))
                     .replace("{price}", formatted);
             player.sendMessage(msg);
         }

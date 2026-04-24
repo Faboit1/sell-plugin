@@ -2,6 +2,7 @@ package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
+import com.yourname.sellplugin.util.NumberFormatter;
 import com.yourname.sellplugin.util.SmallCaps;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -65,15 +66,21 @@ public class ShopMainGUI implements InventoryHolder {
 
         double value = plugin.getSellManager().calculateCategoryValue(player, catId);
         double multiplier = plugin.getMultiplierManager().getMultiplier(player, catId);
+        double dailyBonus = plugin.getDailyBonusManager().getDailyBonus(catId);
+        double effective  = multiplier + dailyBonus;
 
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.DARK_GRAY + "───────────────────");
-        lore.add(ChatColor.GRAY + SmallCaps.convert("value: ")
-                + ChatColor.GREEN + "$" + String.format("%.2f", value));
-        lore.add(ChatColor.GRAY + SmallCaps.convert("multiplier: ")
-                + ChatColor.AQUA + String.format("%.2fx", multiplier));
-        lore.add(ChatColor.DARK_GRAY + "───────────────────");
-        lore.add(ChatColor.YELLOW + SmallCaps.convert("click to view progress!"));
+        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
+        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("value: ")
+                + ChatColor.GREEN + "$" + NumberFormatter.format(value));
+        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("multiplier: ")
+                + ChatColor.AQUA + String.format("%.2fx", effective));
+        if (dailyBonus > 0) {
+            lore.add(ChatColor.GOLD + " ▸ \uD83D\uDD25 " + SmallCaps.convert("daily boost: ")
+                    + ChatColor.YELLOW + "+" + String.format("%.2f", dailyBonus) + "x");
+        }
+        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
+        lore.add(ChatColor.YELLOW + " ✦ " + SmallCaps.convert("click to view progress!"));
 
         List<String> extraLore = cfg.getCategoryLore(catId);
         if (!extraLore.isEmpty()) lore.addAll(extraLore);

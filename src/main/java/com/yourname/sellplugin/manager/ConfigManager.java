@@ -15,6 +15,17 @@ public class ConfigManager {
         this.plugin = plugin;
     }
 
+    // ---- Daily bonus ---------------------------------------------------------
+    /** Flat multiplier amount added to a boosted category's multiplier for the day. */
+    public double getDailyBonusAmount() {
+        return plugin.getConfig().getDouble("daily-bonus.bonus-amount", 0.4);
+    }
+
+    /** Number of categories to boost per day. */
+    public int getDailyBoostedCount() {
+        return plugin.getConfig().getInt("daily-bonus.boosted-count", 2);
+    }
+
     // ---- Multiplier -------------------------------------------------------
     /** Cost (in money earned) to unlock the very first multiplier level (1.1x). */
     public double getStartMultiplier() {

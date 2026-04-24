@@ -259,7 +259,7 @@ public class GUIListener implements Listener {
 
             double base = pl.getPriceManager().getPrice(key);
             String cat = pl.getPriceManager().getCategory(key);
-            double mult = pl.getMultiplierManager().getMultiplier(player, cat);
+            double mult = pl.getMultiplierManager().getEffectiveMultiplier(player, cat);
             int amount = item.getAmount();
             double earned = base * mult * amount;
             totalEarned += earned;

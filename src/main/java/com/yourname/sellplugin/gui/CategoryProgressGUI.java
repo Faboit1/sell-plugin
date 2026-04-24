@@ -2,6 +2,7 @@ package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
+import com.yourname.sellplugin.util.NumberFormatter;
 import com.yourname.sellplugin.util.SmallCaps;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -111,11 +112,27 @@ public class CategoryProgressGUI implements InventoryHolder {
         // ── Snake path ──────────────────────────────────────────────────────
         double mult = plugin.getMultiplierManager().getMultiplier(player, categoryId);
         double moneyEarned = plugin.getMultiplierManager().getMoneyEarned(player, categoryId);
+        double dailyBonus = plugin.getDailyBonusManager().getDailyBonus(categoryId);
         buildSnakePath(mult, moneyEarned);
+
+        // ── Daily bonus indicator (slot 4, top centre) ─────────────────────
+        if (dailyBonus > 0) {
+            List<String> boostLore = new ArrayList<>();
+            boostLore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
+            boostLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("bonus: ")
+                    + ChatColor.YELLOW + "+" + String.format("%.2f", dailyBonus) + "x");
+            boostLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("effective: ")
+                    + ChatColor.GREEN + String.format("%.2fx", mult + dailyBonus));
+            boostLore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
+            boostLore.add(ChatColor.GRAY + SmallCaps.convert("resets at midnight."));
+            inv.setItem(4, makeItem(Material.BLAZE_POWDER,
+                    ChatColor.GOLD + "" + ChatColor.BOLD + "\uD83D\uDD25 " + SmallCaps.convert("Daily Boost Active!"),
+                    boostLore));
+        }
 
         // ── Back button (bottom-right) ──────────────────────────────────────
         List<String> backLore = cfg.getIconLore("back",
-                Collections.singletonList(ChatColor.GRAY + SmallCaps.convert("return to the main menu.")));
+                Collections.singletonList(ChatColor.GRAY + " ▸ " + SmallCaps.convert("return to the main menu.")));
         inv.setItem(SLOT_BACK,
                 makeItem(cfg.getIconMaterial("back", Material.ARROW),
                         cfg.getIconName("back", "&c&l" + SmallCaps.convert("back")),
@@ -162,12 +179,12 @@ public class CategoryProgressGUI implements InventoryHolder {
                     + " " + SmallCaps.convert("multiplier");
 
             List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.DARK_GRAY + "───────────────────");
-            lore.add(ChatColor.GRAY + SmallCaps.convert("status: ") + nameColour + status);
+            lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
+            lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("status: ") + nameColour + status);
 
             if (isStart) {
-                lore.add(ChatColor.DARK_GRAY + "───────────────────");
-                lore.add(ChatColor.YELLOW + SmallCaps.convert("click to view items & prices"));
+                lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
+                lore.add(ChatColor.YELLOW + " ✦ " + SmallCaps.convert("click to view items & prices"));
             }
 
             if (inProgress) {
@@ -175,12 +192,12 @@ public class CategoryProgressGUI implements InventoryHolder {
                 double moneyRequired = plugin.getMultiplierManager().getCumulativeThreshold(i + 1);
                 if (moneyRequired > 0) {
                     double percentage = Math.min(100.0, (moneyEarned / moneyRequired) * 100.0);
-                    lore.add(ChatColor.DARK_GRAY + "───────────────────");
-                    lore.add(ChatColor.GRAY + SmallCaps.convert("earned: ")
-                            + ChatColor.GREEN + "$" + String.format("%.2f", moneyEarned));
-                    lore.add(ChatColor.GRAY + SmallCaps.convert("required: ")
-                            + ChatColor.GREEN + "$" + String.format("%.2f", moneyRequired));
-                    lore.add(ChatColor.GRAY + SmallCaps.convert("progress: ")
+                    lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
+                    lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("earned: ")
+                            + ChatColor.GREEN + "$" + NumberFormatter.format(moneyEarned));
+                    lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("required: ")
+                            + ChatColor.GREEN + "$" + NumberFormatter.format(moneyRequired));
+                    lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("progress: ")
                             + ChatColor.YELLOW + String.format("%.1f%%", percentage));
                 }
             }
@@ -190,9 +207,9 @@ public class CategoryProgressGUI implements InventoryHolder {
                 double moneyNeeded = plugin.getMultiplierManager().getCumulativeThreshold(i);
                 double remaining = Math.max(0, moneyNeeded - moneyEarned);
                 if (remaining > 0) {
-                    lore.add(ChatColor.GRAY + SmallCaps.convert("earn ")
-                            + ChatColor.GREEN + "$" + String.format("%.2f", remaining)
-                            + ChatColor.GRAY + SmallCaps.convert(" more to unlock"));
+                    lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("need: ")
+                            + ChatColor.GREEN + "$" + NumberFormatter.format(remaining)
+                            + ChatColor.GRAY + " " + SmallCaps.convert("more to unlock"));
                 }
             }
 

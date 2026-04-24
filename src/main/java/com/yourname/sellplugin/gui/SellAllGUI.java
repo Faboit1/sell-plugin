@@ -2,6 +2,7 @@ package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
+import com.yourname.sellplugin.util.NumberFormatter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -56,9 +57,13 @@ public class SellAllGUI implements InventoryHolder {
         for (String raw : cfg.getSellAllLore()) {
             if (raw.contains("{multipliers}")) {
                 for (String cat : categories) {
-                    double m = plugin.getMultiplierManager().getMultiplier(player, cat);
+                    double m = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
+                    double daily = plugin.getDailyBonusManager().getDailyBonus(cat);
+                    String suffix = daily > 0
+                            ? ChatColor.GOLD + " (\uD83D\uDD25 +" + String.format("%.2f", daily) + "x)"
+                            : "";
                     lore.add(ChatColor.translateAlternateColorCodes('&',
-                            "&e  \u25b6 &f" + cat + ": &a" + String.format("%.2f", m) + "x"));
+                            "&e  \u25b6 &f" + cat + ": &a" + NumberFormatter.format(m) + "x" + suffix));
                 }
             } else {
                 lore.add(ChatColor.translateAlternateColorCodes('&', raw));

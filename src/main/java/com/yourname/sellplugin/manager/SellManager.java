@@ -29,7 +29,8 @@ public class SellManager {
         int totalItems = 0;
         Map<String, Double> categoryEarnings = new HashMap<>();
 
-        for (int i = 0; i < player.getInventory().getSize(); i++) {
+        int storageSize = player.getInventory().getStorageContents().length;
+        for (int i = 0; i < storageSize; i++) {
             ItemStack item = player.getInventory().getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
@@ -60,7 +61,8 @@ public class SellManager {
         int totalItems = 0;
         Map<String, Double> categoryEarnings = new HashMap<>();
 
-        for (int i = 0; i < player.getInventory().getSize(); i++) {
+        int storageSize = player.getInventory().getStorageContents().length;
+        for (int i = 0; i < storageSize; i++) {
             ItemStack item = player.getInventory().getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
@@ -99,7 +101,8 @@ public class SellManager {
         String cat = plugin.getPriceManager().getCategory(itemKey);
         double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
 
-        for (int i = 0; i < player.getInventory().getSize(); i++) {
+        int storageSize = player.getInventory().getStorageContents().length;
+        for (int i = 0; i < storageSize; i++) {
             ItemStack item = player.getInventory().getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
@@ -123,7 +126,7 @@ public class SellManager {
     public SellPreview previewSellAll(Player player) {
         int itemCount = 0;
         double value = 0.0;
-        for (ItemStack item : player.getInventory().getContents()) {
+        for (ItemStack item : player.getInventory().getStorageContents()) {
             if (item == null || item.getType() == Material.AIR) continue;
             String key = plugin.getPriceManager().getItemKey(item);
             if (key == null) continue;
@@ -142,7 +145,7 @@ public class SellManager {
     // ---------------------------------------------------------------
     public int countCategoryItems(Player player, String category) {
         int total = 0;
-        for (ItemStack item : player.getInventory().getContents()) {
+        for (ItemStack item : player.getInventory().getStorageContents()) {
             if (item == null || item.getType() == Material.AIR) continue;
             String key = plugin.getPriceManager().getItemKey(item);
             if (key == null) continue;
@@ -157,7 +160,7 @@ public class SellManager {
     // ---------------------------------------------------------------
     public double calculateCategoryValue(Player player, String category) {
         double total = 0.0;
-        for (ItemStack item : player.getInventory().getContents()) {
+        for (ItemStack item : player.getInventory().getStorageContents()) {
             if (item == null || item.getType() == Material.AIR) continue;
             String key = plugin.getPriceManager().getItemKey(item);
             if (key == null) continue;

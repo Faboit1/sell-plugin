@@ -5,9 +5,12 @@ import com.yourname.sellplugin.util.NumberFormatter;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.block.ShulkerBox;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BlockStateMeta;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,6 +36,14 @@ public class SellManager {
         for (int i = 0; i < storageSize; i++) {
             ItemStack item = player.getInventory().getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
+
+            if (isShulkerBox(item)) {
+                ShulkerSellData data = sellShulkerContents(player, item, null, null);
+                totalEarned += data.earned;
+                totalItems += data.items;
+                data.categoryEarnings.forEach((cat, val) -> categoryEarnings.merge(cat, val, Double::sum));
+                continue;
+            }
 
             String key = plugin.getPriceManager().getItemKey(item);
             if (key == null) continue;
@@ -65,6 +76,14 @@ public class SellManager {
         for (int i = 0; i < storageSize; i++) {
             ItemStack item = player.getInventory().getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
+
+            if (isShulkerBox(item)) {
+                ShulkerSellData data = sellShulkerContents(player, item, category, null);
+                totalEarned += data.earned;
+                totalItems += data.items;
+                data.categoryEarnings.forEach((cat, val) -> categoryEarnings.merge(cat, val, Double::sum));
+                continue;
+            }
 
             String key = plugin.getPriceManager().getItemKey(item);
             if (key == null) continue;
@@ -106,6 +125,14 @@ public class SellManager {
             ItemStack item = player.getInventory().getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
+            if (isShulkerBox(item)) {
+                ShulkerSellData data = sellShulkerContents(player, item, null, itemKey);
+                totalEarned += data.earned;
+                totalItems += data.items;
+                data.categoryEarnings.forEach((c, val) -> categoryEarnings.merge(c, val, Double::sum));
+                continue;
+            }
+
             String key = plugin.getPriceManager().getItemKey(item);
             if (!itemKey.equalsIgnoreCase(key)) continue;
 
@@ -128,6 +155,14 @@ public class SellManager {
         double value = 0.0;
         for (ItemStack item : player.getInventory().getStorageContents()) {
             if (item == null || item.getType() == Material.AIR) continue;
+
+            if (isShulkerBox(item)) {
+                ShulkerSellData data = peekShulkerContents(player, item, null, null);
+                itemCount += data.items;
+                value += data.earned;
+                continue;
+            }
+
             String key = plugin.getPriceManager().getItemKey(item);
             if (key == null) continue;
             double base = plugin.getPriceManager().getPrice(key);
@@ -147,6 +182,12 @@ public class SellManager {
         int total = 0;
         for (ItemStack item : player.getInventory().getStorageContents()) {
             if (item == null || item.getType() == Material.AIR) continue;
+
+            if (isShulkerBox(item)) {
+                total += peekShulkerContents(player, item, category, null).items;
+                continue;
+            }
+
             String key = plugin.getPriceManager().getItemKey(item);
             if (key == null) continue;
             String cat = plugin.getPriceManager().getCategory(key);
@@ -162,6 +203,12 @@ public class SellManager {
         double total = 0.0;
         for (ItemStack item : player.getInventory().getStorageContents()) {
             if (item == null || item.getType() == Material.AIR) continue;
+
+            if (isShulkerBox(item)) {
+                total += peekShulkerContents(player, item, category, null).earned;
+                continue;
+            }
+
             String key = plugin.getPriceManager().getItemKey(item);
             if (key == null) continue;
             String cat = plugin.getPriceManager().getCategory(key);
@@ -235,6 +282,114 @@ public class SellManager {
                     .replace("{amount}", NumberFormatter.format(itemCount))
                     .replace("{price}", formatted);
             player.sendMessage(msg);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Shulker box helpers
+    // ---------------------------------------------------------------
+
+    /** Returns true if the item is any colour of shulker box. */
+    public static boolean isShulkerBox(ItemStack item) {
+        return item != null && item.getType().name().endsWith("_SHULKER_BOX");
+    }
+
+    /**
+     * Sell sellable items inside a shulker box, modifying its inventory in place.
+     * Filters by category and/or itemKey when non-null.
+     * The shulker box item itself is never consumed.
+     */
+    public ShulkerSellData sellShulkerContents(Player player, ItemStack shulkerItem,
+                                                String categoryFilter, String itemKeyFilter) {
+        if (!(shulkerItem.getItemMeta() instanceof BlockStateMeta bsm)) return ShulkerSellData.EMPTY;
+        if (!(bsm.getBlockState() instanceof ShulkerBox shulker)) return ShulkerSellData.EMPTY;
+
+        double totalEarned = 0.0;
+        int totalItems = 0;
+        Map<String, Double> categoryEarnings = new HashMap<>();
+
+        ItemStack[] contents = shulker.getInventory().getContents();
+        for (int i = 0; i < contents.length; i++) {
+            ItemStack inner = contents[i];
+            if (inner == null || inner.getType() == Material.AIR) continue;
+
+            String key = plugin.getPriceManager().getItemKey(inner);
+            if (key == null) continue;
+
+            String cat = plugin.getPriceManager().getCategory(key);
+            if (categoryFilter != null && !categoryFilter.equalsIgnoreCase(cat)) continue;
+            if (itemKeyFilter != null && !itemKeyFilter.equalsIgnoreCase(key)) continue;
+
+            double base = plugin.getPriceManager().getPrice(key);
+            if (base <= 0) continue;
+
+            double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
+            int amount = inner.getAmount();
+            double earned = base * mult * amount;
+            totalEarned += earned;
+            totalItems += amount;
+            categoryEarnings.merge(cat, earned, Double::sum);
+            shulker.getInventory().setItem(i, null);
+        }
+
+        if (totalItems > 0) {
+            bsm.setBlockState(shulker);
+            shulkerItem.setItemMeta(bsm);
+        }
+
+        return new ShulkerSellData(totalEarned, totalItems, categoryEarnings);
+    }
+
+    /**
+     * Peek at sellable items inside a shulker box without modifying it.
+     * Filters by category and/or itemKey when non-null.
+     */
+    private ShulkerSellData peekShulkerContents(Player player, ItemStack shulkerItem,
+                                                 String categoryFilter, String itemKeyFilter) {
+        if (!(shulkerItem.getItemMeta() instanceof BlockStateMeta bsm)) return ShulkerSellData.EMPTY;
+        if (!(bsm.getBlockState() instanceof ShulkerBox shulker)) return ShulkerSellData.EMPTY;
+
+        double totalEarned = 0.0;
+        int totalItems = 0;
+        Map<String, Double> categoryEarnings = new HashMap<>();
+
+        for (ItemStack inner : shulker.getInventory().getContents()) {
+            if (inner == null || inner.getType() == Material.AIR) continue;
+
+            String key = plugin.getPriceManager().getItemKey(inner);
+            if (key == null) continue;
+
+            String cat = plugin.getPriceManager().getCategory(key);
+            if (categoryFilter != null && !categoryFilter.equalsIgnoreCase(cat)) continue;
+            if (itemKeyFilter != null && !itemKeyFilter.equalsIgnoreCase(key)) continue;
+
+            double base = plugin.getPriceManager().getPrice(key);
+            if (base <= 0) continue;
+
+            double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
+            int amount = inner.getAmount();
+            totalEarned += base * mult * amount;
+            totalItems += amount;
+            categoryEarnings.merge(cat, base * mult * amount, Double::sum);
+        }
+
+        return new ShulkerSellData(totalEarned, totalItems, categoryEarnings);
+    }
+
+    // ---------------------------------------------------------------
+    // Shulker sell data container
+    // ---------------------------------------------------------------
+    public static class ShulkerSellData {
+        public static final ShulkerSellData EMPTY = new ShulkerSellData(0, 0, Collections.emptyMap());
+
+        public final double earned;
+        public final int items;
+        public final Map<String, Double> categoryEarnings;
+
+        public ShulkerSellData(double earned, int items, Map<String, Double> categoryEarnings) {
+            this.earned = earned;
+            this.items = items;
+            this.categoryEarnings = categoryEarnings;
         }
     }
 

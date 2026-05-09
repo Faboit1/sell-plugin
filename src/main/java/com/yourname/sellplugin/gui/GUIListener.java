@@ -251,6 +251,17 @@ public class GUIListener implements Listener {
             ItemStack item = top.getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
+            // Shulker box: sell its contents, return the (now empty/partially-empty) shulker
+            if (SellManager.isShulkerBox(item)) {
+                SellManager.ShulkerSellData data = pl.getSellManager().sellShulkerContents(player, item, null, null);
+                totalEarned += data.earned;
+                totalItems += data.items;
+                data.categoryEarnings.forEach((cat, val) -> categoryEarnings.merge(cat, val, Double::sum));
+                // Return the shulker box (now with sold items removed) to the player
+                returnItem(player, item);
+                continue;
+            }
+
             String key = pl.getPriceManager().getItemKey(item);
             if (key == null || pl.getPriceManager().getPrice(key) <= 0) {
                 nonSellableItems.add(item);

@@ -289,9 +289,11 @@ public class SellManager {
     // Shulker box helpers
     // ---------------------------------------------------------------
 
-    /** Returns true if the item is any colour of shulker box. */
+    /** Returns true if the item is any colour of shulker box (including the default purple one). */
     public static boolean isShulkerBox(ItemStack item) {
-        return item != null && item.getType().name().endsWith("_SHULKER_BOX");
+        if (item == null) return false;
+        String name = item.getType().name();
+        return name.equals("SHULKER_BOX") || name.endsWith("_SHULKER_BOX");
     }
 
     /**

@@ -248,18 +248,24 @@ public class GUIListener implements Listener {
         List<ItemStack> sellableItems = new ArrayList<>();
         List<ItemStack> nonSellableItems = new ArrayList<>();
 
+        // Track shulker boxes as [modifiedItem, originalClone] pairs so we can
+        // return the correct version depending on whether the deposit succeeds.
+        List<ItemStack[]> shulkerBoxPairs = new ArrayList<>();
+
         for (int i = 0; i < ShopMainGUI.BOTTOM_ROW_START; i++) {
             ItemStack item = top.getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
-            // Shulker box: sell its contents, return the (now empty/partially-empty) shulker
+            // Shulker box: sell its contents but defer returning the box until
+            // after the deposit so we can roll back properly on failure.
             if (SellManager.isShulkerBox(item)) {
+                ItemStack originalClone = item.clone();
                 SellManager.ShulkerSellData data = pl.getSellManager().sellShulkerContents(player, item, null, null);
                 totalEarned += data.earned;
                 totalItems += data.items;
                 data.categoryEarnings.forEach((cat, val) -> categoryEarnings.merge(cat, val, Double::sum));
-                // Return the shulker box (now with sold items removed) to the player
-                returnItem(player, item);
+                // [0] = modified item (contents removed), [1] = original clone
+                shulkerBoxPairs.add(new ItemStack[]{item, originalClone});
                 continue;
             }
 
@@ -280,6 +286,7 @@ public class GUIListener implements Listener {
             sellableItems.add(item);
         }
 
+        // Always return non-sellable items immediately.
         for (ItemStack item : nonSellableItems) {
             returnItem(player, item);
         }
@@ -290,12 +297,26 @@ public class GUIListener implements Listener {
                 for (Map.Entry<String, Double> entry : categoryEarnings.entrySet()) {
                     pl.getMultiplierManager().addEarnings(player, entry.getKey(), entry.getValue());
                 }
+                // Return the modified shulker boxes (sellable contents removed).
+                for (ItemStack[] pair : shulkerBoxPairs) {
+                    returnItem(player, pair[0]);
+                }
                 pl.getSellManager().sendSellNotification(player, totalEarned, totalItems);
             } else {
                 player.sendMessage(pl.getConfigManager().getMessage("economy-error"));
+                // Deposit failed – return everything in its original state.
                 for (ItemStack item : sellableItems) {
                     returnItem(player, item);
                 }
+                // Restore shulker boxes to their original state (undo content removal).
+                for (ItemStack[] pair : shulkerBoxPairs) {
+                    returnItem(player, pair[1]);
+                }
+            }
+        } else {
+            // Nothing was sold – return shulker boxes unchanged.
+            for (ItemStack[] pair : shulkerBoxPairs) {
+                returnItem(player, pair[0]);
             }
         }
     }

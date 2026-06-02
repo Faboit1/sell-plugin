@@ -54,7 +54,8 @@ public class WorthPacketListener {
                 if (!shouldDecorate(event.getPlayer())) return;
 
                 if (event.getPacketType() == PacketType.Play.Server.SET_SLOT) {
-                    ItemStack item = event.getPacket().getItemModifier().readSafely(0);
+                    if (event.getPacket().getItemModifier().size() <= 0) return;
+                    ItemStack item = event.getPacket().getItemModifier().read(0);
                     ItemStack updated = addWorthLore(event.getPlayer(), item);
                     if (updated != item) {
                         event.getPacket().getItemModifier().write(0, updated);
@@ -62,7 +63,8 @@ public class WorthPacketListener {
                     return;
                 }
 
-                List<ItemStack> items = event.getPacket().getItemListModifier().readSafely(0);
+                if (event.getPacket().getItemListModifier().size() <= 0) return;
+                List<ItemStack> items = event.getPacket().getItemListModifier().read(0);
                 if (items == null || items.isEmpty()) return;
 
                 boolean changed = false;

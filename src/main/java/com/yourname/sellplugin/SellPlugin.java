@@ -2,9 +2,11 @@ package com.yourname.sellplugin;
 
 import com.yourname.sellplugin.command.SellAllCommand;
 import com.yourname.sellplugin.command.SellCommand;
+import com.yourname.sellplugin.command.FastSellAllCommand;
 import com.yourname.sellplugin.command.TopSellCommand;
 import com.yourname.sellplugin.economy.EconomyManager;
 import com.yourname.sellplugin.gui.GUIListener;
+import com.yourname.sellplugin.listener.WorthPacketListener;
 import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.DailyBonusManager;
 import com.yourname.sellplugin.manager.MultiplierManager;
@@ -20,6 +22,7 @@ public class SellPlugin extends JavaPlugin {
     private MultiplierManager multiplierManager;
     private DailyBonusManager dailyBonusManager;
     private SellManager sellManager;
+    private WorthPacketListener worthPacketListener;
 
     @Override
     public void onEnable() {
@@ -42,8 +45,12 @@ public class SellPlugin extends JavaPlugin {
 
         getCommand("sell").setExecutor(new SellCommand(this));
         getCommand("sellall").setExecutor(new SellAllCommand(this));
+        getCommand("fastsellall").setExecutor(new FastSellAllCommand(this));
         getCommand("topsell").setExecutor(new TopSellCommand(this));
         getServer().getPluginManager().registerEvents(new GUIListener(this), this);
+
+        worthPacketListener = new WorthPacketListener(this);
+        worthPacketListener.register();
 
         getLogger().info("SellPlugin has been enabled successfully.");
     }
@@ -52,6 +59,9 @@ public class SellPlugin extends JavaPlugin {
     public void onDisable() {
         if (multiplierManager != null) {
             multiplierManager.saveAll();
+        }
+        if (worthPacketListener != null) {
+            worthPacketListener.unregister();
         }
         getLogger().info("SellPlugin has been disabled.");
     }

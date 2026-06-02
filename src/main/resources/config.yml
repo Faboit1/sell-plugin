@@ -57,6 +57,13 @@ coinsengine-currency-id: coins
 # Filler block used as background in GUIs (must be a valid Material name)
 filler-block: "BLACK_STAINED_GLASS_PANE"
 
+# ---- Sell worth tooltip -------------------------------------- #
+# Adds a client-side worth line to sellable items using packets.
+# Supports the {worth} placeholder.
+worth:
+  enabled: true
+  format: "&7Worth &a&l${worth}"
+
 # ---- Main Shop GUI (/sell) ---------------------------------- #
 # This opens the 9x5 category browsing menu.
 

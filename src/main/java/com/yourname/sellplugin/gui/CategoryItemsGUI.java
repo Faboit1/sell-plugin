@@ -3,6 +3,7 @@ package com.yourname.sellplugin.gui;
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.PriceManager;
+import com.yourname.sellplugin.util.ItemNameFormatter;
 import com.yourname.sellplugin.util.NumberFormatter;
 import com.yourname.sellplugin.util.SmallCaps;
 import org.bukkit.Bukkit;
@@ -141,7 +142,7 @@ public class CategoryItemsGUI implements InventoryHolder {
         int catCount    = plugin.getSellManager().countCategoryItems(player, categoryId);
         List<String> sellLore = new ArrayList<>();
         sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("category: ")
-                + ChatColor.WHITE + categoryId);
+                + ChatColor.WHITE + ChatColor.stripColor(cfg.getCategoryDisplayName(categoryId)));
         if (catCount > 0) {
             sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("items: ")
                     + ChatColor.WHITE + NumberFormatter.format(catCount));
@@ -161,10 +162,11 @@ public class CategoryItemsGUI implements InventoryHolder {
     private ItemStack buildItemDisplay(String itemKey) {
         PriceManager pm = plugin.getPriceManager();
         double base = pm.getPrice(itemKey);
-        double earned = plugin.getMultiplierManager().getMultiplier(player, categoryId);
-        double daily  = plugin.getDailyBonusManager().getDailyBonus(categoryId);
-        double mult   = earned + daily;
-        double effective = base * mult;
+        String itemCategory = pm.getCategory(itemKey);
+        double earned = plugin.getMultiplierManager().getMultiplier(player, itemCategory);
+        double daily  = plugin.getDailyBonusManager().getDailyBonus(itemCategory);
+        double effectiveMultiplier = plugin.getMultiplierManager().getEffectiveMultiplier(player, itemCategory);
+        double effective = base * effectiveMultiplier;
 
         // Build correct ItemStack (handles potions with PotionMeta)
         ItemStack item = resolveItemStack(itemKey);
@@ -179,13 +181,13 @@ public class CategoryItemsGUI implements InventoryHolder {
                     + ChatColor.GOLD + " (+" + String.format("%.2fx", daily) + " today)");
         } else {
             lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Mult:  "
-                    + ChatColor.AQUA + String.format("%.2fx", mult));
+                    + ChatColor.AQUA + String.format("%.2fx", effectiveMultiplier));
         }
         lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Price: "
                 + ChatColor.GREEN + "$" + NumberFormatter.format(effective));
         lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━");
 
-        String displayName = ChatColor.WHITE + formatItemName(itemKey);
+        String displayName = ChatColor.WHITE + ItemNameFormatter.formatKey(itemKey);
 
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -222,10 +224,6 @@ public class CategoryItemsGUI implements InventoryHolder {
         }
         Material mat = Material.matchMaterial(itemKey);
         return new ItemStack(mat != null ? mat : Material.BARRIER);
-    }
-
-    private String formatItemName(String key) {
-        return key.replace("_", " ").replace(":", " – ");
     }
 
     // ── Item clicked ─────────────────────────────────────────────────────────
@@ -286,4 +284,3 @@ public class CategoryItemsGUI implements InventoryHolder {
         return page;
     }
 }
-

@@ -2,7 +2,7 @@ name: SellPlugin
 version: 2.1.0
 main: com.yourname.sellplugin.SellPlugin
 api-version: 1.13
-softdepend: [Vault, CoinsEngine]
+softdepend: [Vault, CoinsEngine, ProtocolLib]
 
 commands:
   sell:
@@ -13,6 +13,10 @@ commands:
   sellall:
     description: Opens the quick sell-all GUI.
     usage: /sellall
+    permission: sellplugin.use
+  fastsellall:
+    description: Instantly sells all sellable items without opening a GUI.
+    usage: /fastsellall
     permission: sellplugin.use
 
   topsell:

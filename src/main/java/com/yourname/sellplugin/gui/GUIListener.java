@@ -81,7 +81,7 @@ public class GUIListener implements Listener {
                     e.setCancelled(true);
                     String catId = shopGUI.getCategoryAtSlot(slot);
                     if (catId != null) {
-                        new CategoryProgressGUI(plugin, player, catId).open(player);
+                        new CategoryItemsGUI(plugin, player, catId, 0).open(player);
                     }
                     return;
                 }
@@ -130,7 +130,7 @@ public class GUIListener implements Listener {
             }
 
             if (slot == ConfirmSellGUI.SLOT_CANCEL) {
-                new CategoryProgressGUI(plugin, player, confirmGUI.getCategoryId()).open(player);
+                new CategoryItemsGUI(plugin, player, confirmGUI.getCategoryId(), confirmGUI.getReturnPage()).open(player);
                 return;
             }
             return;
@@ -145,7 +145,7 @@ public class GUIListener implements Listener {
             int slot = e.getSlot();
 
             if (slot == CategoryItemsGUI.SLOT_BACK) {
-                new CategoryProgressGUI(plugin, player, catItemsGUI.getCategoryId()).open(player);
+                new ShopMainGUI(plugin, player).open(player);
                 return;
             }
 
@@ -160,8 +160,7 @@ public class GUIListener implements Listener {
             }
 
             if (slot == CategoryItemsGUI.SLOT_SELL_ALL) {
-                player.closeInventory();
-                plugin.getSellManager().sellCategory(player, catItemsGUI.getCategoryId());
+                new ConfirmSellGUI(plugin, player, catItemsGUI.getCategoryId(), catItemsGUI.getPage()).open(player);
                 return;
             }
 
@@ -307,4 +306,3 @@ public class GUIListener implements Listener {
         }
     }
 }
-

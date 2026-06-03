@@ -31,10 +31,12 @@ public class ConfirmSellGUI implements InventoryHolder {
     private final Inventory inv;
     private final SellPlugin plugin;
     private final String categoryId;
+    private final int returnPage;
 
-    public ConfirmSellGUI(SellPlugin plugin, Player player, String categoryId) {
+    public ConfirmSellGUI(SellPlugin plugin, Player player, String categoryId, int returnPage) {
         this.plugin = plugin;
         this.categoryId = categoryId;
+        this.returnPage = returnPage;
 
         ConfigManager cfg = plugin.getConfigManager();
         String title = ChatColor.DARK_GRAY + "" + ChatColor.BOLD
@@ -113,5 +115,8 @@ public class ConfirmSellGUI implements InventoryHolder {
     public String getCategoryId() {
         return categoryId;
     }
-}
 
+    public int getReturnPage() {
+        return returnPage;
+    }
+}

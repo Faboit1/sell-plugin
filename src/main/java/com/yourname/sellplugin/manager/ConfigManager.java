@@ -85,6 +85,14 @@ public class ConfigManager {
         return mat != null ? mat : Material.BLACK_STAINED_GLASS_PANE;
     }
 
+    public boolean isWorthEnabled() {
+        return plugin.getConfig().getBoolean("worth.enabled", true);
+    }
+
+    public String getWorthFormat() {
+        return color(plugin.getConfig().getString("worth.format", "&7Worth &a&l${worth}"));
+    }
+
     // ---- SellAll GUI (simple /sellall GUI) --------------------------------
     public String getSellAllGuiTitle() {
         return color(plugin.getConfig().getString("sell-all-gui.title", "&8&lSell All Items"));

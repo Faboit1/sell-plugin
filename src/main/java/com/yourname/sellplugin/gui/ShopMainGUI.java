@@ -80,7 +80,7 @@ public class ShopMainGUI implements InventoryHolder {
                     + ChatColor.YELLOW + "+" + String.format("%.2f", dailyBonus) + "x");
         }
         lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
-        lore.add(ChatColor.YELLOW + " ✦ " + SmallCaps.convert("click to view progress!"));
+        lore.add(ChatColor.YELLOW + " ✦ " + SmallCaps.convert("click to view items & prices!"));
 
         List<String> extraLore = cfg.getCategoryLore(catId);
         if (!extraLore.isEmpty()) lore.addAll(extraLore);

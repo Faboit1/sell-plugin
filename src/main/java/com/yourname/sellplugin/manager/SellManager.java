@@ -221,6 +221,24 @@ public class SellManager {
         return total;
     }
 
+    public double calculateItemWorth(Player player, ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return 0.0;
+
+        if (isShulkerBox(item)) {
+            return peekShulkerContents(player, item, null, null).earned;
+        }
+
+        String key = plugin.getPriceManager().getItemKey(item);
+        if (key == null) return 0.0;
+
+        double base = plugin.getPriceManager().getPrice(key);
+        if (base <= 0) return 0.0;
+
+        String category = plugin.getPriceManager().getCategory(key);
+        double multiplier = plugin.getMultiplierManager().getEffectiveMultiplier(player, category);
+        return base * multiplier * item.getAmount();
+    }
+
     // ---------------------------------------------------------------
     // Finalize a sell operation
     // ---------------------------------------------------------------

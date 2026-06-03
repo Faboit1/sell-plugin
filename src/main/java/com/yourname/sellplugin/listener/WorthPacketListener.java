@@ -50,7 +50,7 @@ public class WorthPacketListener {
 
             @Override
             public void onPacketSending(PacketEvent event) {
-                if (!plugin.getConfigManager().isWorthEnabled()) return;
+                if (!WorthPacketListener.this.plugin.getConfigManager().isWorthEnabled()) return;
                 if (!shouldDecorate(event.getPlayer())) return;
 
                 if (event.getPacketType() == PacketType.Play.Server.SET_SLOT) {

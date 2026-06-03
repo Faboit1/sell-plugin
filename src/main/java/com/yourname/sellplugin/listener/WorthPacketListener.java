@@ -46,6 +46,7 @@ public class WorthPacketListener {
         ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
         packetListener = new PacketAdapter(plugin, ListenerPriority.NORMAL,
                 PacketType.Play.Server.SET_SLOT,
+                PacketType.Play.Server.SET_CURSOR_ITEM,
                 PacketType.Play.Server.WINDOW_ITEMS) {
 
             @Override
@@ -53,7 +54,8 @@ public class WorthPacketListener {
                 if (!WorthPacketListener.this.plugin.getConfigManager().isWorthEnabled()) return;
                 if (!shouldDecorate(event.getPlayer())) return;
 
-                if (event.getPacketType() == PacketType.Play.Server.SET_SLOT) {
+                if (event.getPacketType() == PacketType.Play.Server.SET_SLOT
+                        || event.getPacketType() == PacketType.Play.Server.SET_CURSOR_ITEM) {
                     if (event.getPacket().getItemModifier().size() <= 0) return;
                     ItemStack item = event.getPacket().getItemModifier().read(0);
                     ItemStack updated = addWorthLore(event.getPlayer(), item);

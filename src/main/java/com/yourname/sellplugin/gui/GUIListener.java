@@ -81,7 +81,7 @@ public class GUIListener implements Listener {
                     e.setCancelled(true);
                     String catId = shopGUI.getCategoryAtSlot(slot);
                     if (catId != null) {
-                        new CategoryItemsGUI(plugin, player, catId, 0).open(player);
+                        new ConfirmSellGUI(plugin, player, catId, 0).open(player);
                     }
                     return;
                 }

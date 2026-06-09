@@ -16,6 +16,7 @@ import com.yourname.sellplugin.gui.SellAllGUI;
 import com.yourname.sellplugin.gui.ShopMainGUI;
 import com.yourname.sellplugin.gui.TopSellGUI;
 import com.yourname.sellplugin.util.NumberFormatter;
+import org.bukkit.GameMode;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
@@ -113,6 +114,8 @@ public class WorthPacketListener {
     }
 
     private boolean shouldDecorate(Player player) {
+        if (player.getGameMode() == GameMode.CREATIVE) return false;
+
         Inventory topInventory = player.getOpenInventory().getTopInventory();
         InventoryHolder holder = topInventory.getHolder();
 

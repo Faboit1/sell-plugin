@@ -223,7 +223,8 @@ public class CategoryItemsGUI implements InventoryHolder {
             return item;
         }
         Material mat = Material.matchMaterial(itemKey);
-        return new ItemStack(mat != null ? mat : Material.BARRIER);
+        if (mat == null || !mat.isItem()) return new ItemStack(Material.BARRIER);
+        return new ItemStack(mat);
     }
 
     // ── Item clicked ─────────────────────────────────────────────────────────

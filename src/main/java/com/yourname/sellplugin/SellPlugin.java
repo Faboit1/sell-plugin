@@ -28,6 +28,7 @@ public class SellPlugin extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         configManager = new ConfigManager(this);
+        configManager.generateExampleConfig();
 
         priceManager = new PriceManager(this);
         priceManager.loadPrices();

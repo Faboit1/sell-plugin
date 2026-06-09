@@ -224,6 +224,23 @@ public class ConfigManager {
     public void reload() {
         plugin.reloadConfig();
         plugin.getPriceManager().loadPrices();
+        generateExampleConfig();
+    }
+
+    /**
+     * Generates an example-config.yml in the plugin data folder that always
+     * reflects the latest defaults shipped inside the JAR.
+     */
+    public void generateExampleConfig() {
+        try {
+            java.io.InputStream in = plugin.getResource("config.yml");
+            if (in == null) return;
+            java.io.File target = new java.io.File(plugin.getDataFolder(), "example-config.yml");
+            java.nio.file.Files.copy(in, target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            in.close();
+        } catch (java.io.IOException e) {
+            plugin.getLogger().warning("Could not generate example-config.yml: " + e.getMessage());
+        }
     }
 
     // ---- Helpers ----------------------------------------------------------

@@ -38,8 +38,9 @@ public class ShopMainGUI implements InventoryHolder {
     public ShopMainGUI(SellPlugin plugin, Player player) {
         this.plugin = plugin;
         this.player = player;
-        // Title in small caps: "put items here to sell"
-        String title = ChatColor.DARK_GRAY + "" + ChatColor.BOLD + SmallCaps.convert("put items here to sell");
+        // Title in small caps (configurable via messages.shop.title)
+        String title = ChatColor.DARK_GRAY + "" + ChatColor.BOLD
+                + SmallCaps.convert(plugin.getConfigManager().getText("shop.title", "put items here to sell"));
         this.inv = Bukkit.createInventory(this, SIZE, title);
         populate();
     }
@@ -69,18 +70,20 @@ public class ShopMainGUI implements InventoryHolder {
         double dailyBonus = plugin.getDailyBonusManager().getDailyBonus(catId);
         double effective  = multiplier + dailyBonus;
 
+        String separator = cfg.getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
+
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
-        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("value: ")
+        lore.add(separator);
+        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("shop.value-label", "value: "))
                 + ChatColor.GREEN + "$" + NumberFormatter.format(value));
-        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("multiplier: ")
+        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("shop.multiplier-label", "multiplier: "))
                 + ChatColor.AQUA + String.format("%.2fx", effective));
         if (dailyBonus > 0) {
-            lore.add(ChatColor.GOLD + " ▸ \uD83D\uDD25 " + SmallCaps.convert("daily boost: ")
+            lore.add(ChatColor.GOLD + " ▸ \uD83D\uDD25 " + SmallCaps.convert(cfg.getText("shop.daily-boost-label", "daily boost: "))
                     + ChatColor.YELLOW + "+" + String.format("%.2f", dailyBonus) + "x");
         }
-        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
-        lore.add(ChatColor.YELLOW + " ✦ " + SmallCaps.convert("click to view items & prices!"));
+        lore.add(separator);
+        lore.add(ChatColor.YELLOW + " ✦ " + SmallCaps.convert(cfg.getText("shop.click-to-view", "click to view items & prices!")));
 
         List<String> extraLore = cfg.getCategoryLore(catId);
         if (!extraLore.isEmpty()) lore.addAll(extraLore);

@@ -17,7 +17,7 @@ public class SellAllCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("Only players can use this command.");
+            sender.sendMessage(plugin.getConfigManager().getText("player-only-command", "&cOnly players can use this command."));
             return true;
         }
 

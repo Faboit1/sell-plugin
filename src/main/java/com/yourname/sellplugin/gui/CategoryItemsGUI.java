@@ -60,7 +60,7 @@ public class CategoryItemsGUI implements InventoryHolder {
 
         ConfigManager cfg = plugin.getConfigManager();
         String title = cfg.getCategoryDisplayName(categoryId)
-                + ChatColor.DARK_GRAY + " – Items";
+                + cfg.getText("category-items.title-suffix", "&8 – Items");
         this.inv = Bukkit.createInventory(this, 54, title);
         populate();
     }
@@ -121,10 +121,13 @@ public class CategoryItemsGUI implements InventoryHolder {
         // ── Page indicator ─────────────────────────────────────────────────
         int totalPages = Math.max(1, (int) Math.ceil((double) itemKeys.size() / ITEMS_PER_PAGE));
         List<String> infoLore = Collections.singletonList(
-                ChatColor.GRAY + "Total items: " + itemKeys.size());
+                cfg.getText("category-items.total-items", "&7Total items: {count}")
+                        .replace("{count}", String.valueOf(itemKeys.size())));
         inv.setItem(SLOT_INFO, makeItem(
                 cfg.getIconMaterial("page-indicator", Material.PAPER),
-                ChatColor.WHITE + "Page " + (page + 1) + " / " + totalPages,
+                cfg.getText("category-items.page-indicator", "&fPage {page} / {total}")
+                        .replace("{page}", String.valueOf(page + 1))
+                        .replace("{total}", String.valueOf(totalPages)),
                 infoLore));
 
         // ── Next page ──────────────────────────────────────────────────────
@@ -141,15 +144,15 @@ public class CategoryItemsGUI implements InventoryHolder {
         double catValue = plugin.getSellManager().calculateCategoryValue(player, categoryId);
         int catCount    = plugin.getSellManager().countCategoryItems(player, categoryId);
         List<String> sellLore = new ArrayList<>();
-        sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("category: ")
+        sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-items.category-label", "category: "))
                 + ChatColor.WHITE + ChatColor.stripColor(cfg.getCategoryDisplayName(categoryId)));
         if (catCount > 0) {
-            sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("items: ")
+            sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-items.items-label", "items: "))
                     + ChatColor.WHITE + NumberFormatter.format(catCount));
-            sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("earn: ")
+            sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-items.earn-label", "earn: "))
                     + ChatColor.GREEN + "$" + NumberFormatter.format(catValue));
         } else {
-            sellLore.add(ChatColor.RED + " ▸ " + SmallCaps.convert("no items to sell."));
+            sellLore.add(ChatColor.RED + " ▸ " + SmallCaps.convert(cfg.getText("category-items.no-items-to-sell", "no items to sell.")));
         }
         inv.setItem(SLOT_SELL_ALL, makeItem(
                 cfg.getIconMaterial("sell-category", Material.GOLD_INGOT),

@@ -1,14 +1,24 @@
 name: SellPlugin
-version: 2.1.0
+version: 2.2.0
 main: com.yourname.sellplugin.SellPlugin
 api-version: 1.13
 softdepend: [Vault, CoinsEngine, ProtocolLib]
 
 commands:
   sell:
-    description: Opens the category shop menu. Use /sell reload to reload config.
+    description: Opens the sell GUI where you can place items to sell.
     usage: /sell [reload]
     aliases: [sellmenu, sellgui, shop]
+    permission: sellplugin.use
+  sellmulti:
+    description: Opens the multiplier overview GUI.
+    usage: /sellmulti
+    aliases: [multipliers, sellmultiplier]
+    permission: sellplugin.use
+  sellworth:
+    description: Opens the item prices GUI to browse item values.
+    usage: /sellworth
+    aliases: [worth, prices, itemprices]
     permission: sellplugin.use
   sellall:
     description: Opens the quick sell-all GUI.

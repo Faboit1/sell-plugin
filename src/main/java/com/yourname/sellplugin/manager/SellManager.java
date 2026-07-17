@@ -2,7 +2,6 @@ package com.yourname.sellplugin.manager;
 
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.util.NumberFormatter;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.ShulkerBox;
@@ -270,17 +269,18 @@ public class SellManager {
     public void sendSellNotification(Player player, double amount, int itemCount) {
         String formatted = NumberFormatter.format(amount);
 
-        // Action bar: always shown – lime color (&a) "+$amount"
-        String actionBarText = ChatColor.GREEN + "+$" + formatted;
+        // Action bar: always shown – "+$amount"
+        String actionBarText = plugin.getConfigManager().getText("action-bar", "&a+${amount}")
+                .replace("{amount}", formatted);
         player.sendActionBar(actionBarText);
 
         // Title notification: only if enabled in config
         if (plugin.getConfigManager().isTitleNotificationEnabled()) {
-            player.sendTitle(
-                    ChatColor.GREEN + "+$" + formatted,
-                    ChatColor.GRAY + "You sold " + NumberFormatter.format(itemCount) + " item" + (itemCount == 1 ? "" : "s"),
-                    10, 40, 20
-            );
+            String titleText = plugin.getConfigManager().getText("sell-title", "&a+${amount}")
+                    .replace("{amount}", formatted);
+            String subtitleText = plugin.getConfigManager().getText("sell-subtitle", "&7You sold {count} item(s)")
+                    .replace("{count}", NumberFormatter.format(itemCount));
+            player.sendTitle(titleText, subtitleText, 10, 40, 20);
         }
 
         // Play sound if enabled

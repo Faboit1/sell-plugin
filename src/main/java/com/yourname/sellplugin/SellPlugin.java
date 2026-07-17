@@ -2,8 +2,10 @@ package com.yourname.sellplugin;
 
 import com.yourname.sellplugin.command.SellAllCommand;
 import com.yourname.sellplugin.command.SellCommand;
+import com.yourname.sellplugin.command.SellMultiCommand;
 import com.yourname.sellplugin.command.FastSellAllCommand;
 import com.yourname.sellplugin.command.TopSellCommand;
+import com.yourname.sellplugin.command.WorthCommand;
 import com.yourname.sellplugin.economy.EconomyManager;
 import com.yourname.sellplugin.gui.GUIListener;
 import com.yourname.sellplugin.listener.WorthPacketListener;
@@ -47,6 +49,8 @@ public class SellPlugin extends JavaPlugin {
         getCommand("sellall").setExecutor(new SellAllCommand(this));
         getCommand("fastsellall").setExecutor(new FastSellAllCommand(this));
         getCommand("topsell").setExecutor(new TopSellCommand(this));
+        getCommand("sellmulti").setExecutor(new SellMultiCommand(this));
+        getCommand("sellworth").setExecutor(new WorthCommand(this));
         getServer().getPluginManager().registerEvents(new GUIListener(this), this);
 
         worthPacketListener = new WorthPacketListener(this);

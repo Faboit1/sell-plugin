@@ -184,6 +184,15 @@ public class ConfigManager {
         return color(prefix + msg);
     }
 
+    /**
+     * Returns an arbitrary configurable text under {@code messages.<path>},
+     * colour-translated, falling back to {@code def} if absent.
+     * Used for all customisable GUI/command text that isn't a chat "message".
+     */
+    public String getText(String path, String def) {
+        return color(plugin.getConfig().getString("messages." + path, def));
+    }
+
     // ---- Icons ----------------------------------------------------------------
     /**
      * Returns the configured Material for an icon key, falling back to

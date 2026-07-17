@@ -32,11 +32,11 @@ public class GUIListener implements Listener {
     public void onDrag(InventoryDragEvent e) {
         InventoryHolder holder = e.getView().getTopInventory().getHolder();
 
-        // ShopMainGUI: allow drags in the item-placement area (0-35),
-        // cancel if any slot touches the protected bottom row (36-44).
+        // ShopMainGUI: allow drags in the item-placement area (0-44),
+        // cancel if any slot touches the protected bottom row (45-53).
         if (holder instanceof ShopMainGUI) {
             for (int slot : e.getRawSlots()) {
-                if (slot >= ShopMainGUI.BOTTOM_ROW_START && slot <= 44) {
+                if (slot >= ShopMainGUI.BOTTOM_ROW_START && slot <= 53) {
                     e.setCancelled(true);
                     return;
                 }
@@ -50,7 +50,9 @@ public class GUIListener implements Listener {
                 || holder instanceof SellAllGUI
                 || holder instanceof ConfirmSellGUI
                 || holder instanceof ConfirmSellAllGUI
-                || holder instanceof TopSellGUI) {
+                || holder instanceof TopSellGUI
+                || holder instanceof SellMultiGUI
+                || holder instanceof WorthGUI) {
             e.setCancelled(true);
         }
     }
@@ -76,21 +78,68 @@ public class GUIListener implements Listener {
             if (clicked != null && clicked.getHolder() instanceof ShopMainGUI) {
                 int slot = e.getSlot();
 
-                // Bottom row (36-44): protected – handle category clicks
+                // Bottom row (45-53): protected – handle sell button
                 if (slot >= ShopMainGUI.BOTTOM_ROW_START) {
                     e.setCancelled(true);
-                    String catId = shopGUI.getCategoryAtSlot(slot);
-                    if (catId != null) {
-                        new CategoryItemsGUI(plugin, player, catId, 0).open(player);
+                    if (slot == ShopMainGUI.SLOT_SELL_BUTTON) {
+                        // Sell all items in the GUI
+                        sellGuiItems(player, shopGUI);
                     }
                     return;
                 }
 
-                // Slots 0-35: allow item placement / removal
+                // Slots 0-44: allow item placement / removal
+                // After any click, schedule a sell button refresh
+                plugin.getServer().getScheduler().runTaskLater(plugin, shopGUI::refreshSellButton, 1L);
                 return;
             }
 
             e.setCancelled(true);
+            return;
+        }
+
+        // ── SellMultiGUI ─────────────────────────────────────────────────────
+        if (holder instanceof SellMultiGUI multiGUI) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() == null
+                    || !(e.getClickedInventory().getHolder() instanceof SellMultiGUI)) return;
+
+            int slot = e.getSlot();
+            String catId = multiGUI.getCategoryAtSlot(slot);
+            if (catId != null) {
+                new CategoryProgressGUI(plugin, player, catId).open(player);
+            }
+            return;
+        }
+
+        // ── WorthGUI ─────────────────────────────────────────────────────────
+        if (holder instanceof WorthGUI worthGUI) {
+            e.setCancelled(true);
+            if (e.getClickedInventory() == null
+                    || !(e.getClickedInventory().getHolder() instanceof WorthGUI)) return;
+
+            int slot = e.getSlot();
+
+            if (slot == WorthGUI.SLOT_CLOSE) {
+                player.closeInventory();
+                return;
+            }
+
+            if (slot == WorthGUI.SLOT_PREV && worthGUI.hasPrevPage()) {
+                worthGUI.prevPage().open(player);
+                return;
+            }
+
+            if (slot == WorthGUI.SLOT_NEXT && worthGUI.hasNextPage()) {
+                worthGUI.nextPage().open(player);
+                return;
+            }
+
+            if (slot == WorthGUI.SLOT_FILTER) {
+                String nextFilter = worthGUI.getNextFilter();
+                new WorthGUI(plugin, player, nextFilter, 0).open(player);
+                return;
+            }
             return;
         }
 
@@ -103,7 +152,7 @@ public class GUIListener implements Listener {
             int slot = e.getSlot();
 
             if (slot == CategoryProgressGUI.SLOT_BACK) {
-                new ShopMainGUI(plugin, player).open(player);
+                new SellMultiGUI(plugin, player).open(player);
                 return;
             }
 
@@ -145,7 +194,7 @@ public class GUIListener implements Listener {
             int slot = e.getSlot();
 
             if (slot == CategoryItemsGUI.SLOT_BACK) {
-                new ShopMainGUI(plugin, player).open(player);
+                new SellMultiGUI(plugin, player).open(player);
                 return;
             }
 
@@ -229,6 +278,75 @@ public class GUIListener implements Listener {
         }
     }
 
+    // ── Sell items placed in the ShopMainGUI (via button click) ─────────────
+
+    private void sellGuiItems(Player player, ShopMainGUI shopGUI) {
+        Inventory top = shopGUI.getInventory();
+        SellPlugin pl = shopGUI.getPlugin();
+
+        double totalEarned = 0.0;
+        int totalItems = 0;
+        Map<String, Double> categoryEarnings = new HashMap<>();
+        List<ItemStack> sellableItems = new ArrayList<>();
+        List<ItemStack> nonSellableItems = new ArrayList<>();
+
+        for (int i = 0; i < ShopMainGUI.ITEM_AREA_END; i++) {
+            ItemStack item = top.getItem(i);
+            if (item == null || item.getType() == Material.AIR) continue;
+
+            // Shulker box: sell its contents, return the shulker
+            if (SellManager.isShulkerBox(item)) {
+                SellManager.ShulkerSellData data = pl.getSellManager().sellShulkerContents(player, item, null, null);
+                totalEarned += data.earned;
+                totalItems += data.items;
+                data.categoryEarnings.forEach((cat, val) -> categoryEarnings.merge(cat, val, Double::sum));
+                nonSellableItems.add(item); // return shulker box
+                top.setItem(i, null);
+                continue;
+            }
+
+            String key = pl.getPriceManager().getItemKey(item);
+            if (key == null || pl.getPriceManager().getPrice(key) <= 0) {
+                nonSellableItems.add(item);
+                top.setItem(i, null);
+                continue;
+            }
+
+            double base = pl.getPriceManager().getPrice(key);
+            String cat = pl.getPriceManager().getCategory(key);
+            double mult = pl.getMultiplierManager().getEffectiveMultiplier(player, cat);
+            int amount = item.getAmount();
+            double earned = base * mult * amount;
+            totalEarned += earned;
+            totalItems += amount;
+            categoryEarnings.merge(cat, earned, Double::sum);
+            sellableItems.add(item);
+            top.setItem(i, null);
+        }
+
+        for (ItemStack item : nonSellableItems) {
+            returnItem(player, item);
+        }
+
+        if (totalEarned > 0) {
+            boolean ok = pl.getEconomyManager().deposit(player, totalEarned);
+            if (ok) {
+                for (Map.Entry<String, Double> entry : categoryEarnings.entrySet()) {
+                    pl.getMultiplierManager().addEarnings(player, entry.getKey(), entry.getValue());
+                }
+                pl.getSellManager().sendSellNotification(player, totalEarned, totalItems);
+            } else {
+                player.sendMessage(pl.getConfigManager().getMessage("economy-error"));
+                for (ItemStack item : sellableItems) {
+                    returnItem(player, item);
+                }
+            }
+        }
+
+        // Refresh the sell button after selling
+        shopGUI.refreshSellButton();
+    }
+
     // ── Close handling – sell items placed in ShopMainGUI ────────────────────
 
     @EventHandler
@@ -247,7 +365,7 @@ public class GUIListener implements Listener {
         List<ItemStack> sellableItems = new ArrayList<>();
         List<ItemStack> nonSellableItems = new ArrayList<>();
 
-        for (int i = 0; i < ShopMainGUI.BOTTOM_ROW_START; i++) {
+        for (int i = 0; i < ShopMainGUI.ITEM_AREA_END; i++) {
             ItemStack item = top.getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 

@@ -65,11 +65,13 @@ worth:
   format: "&7Worth &a&l${worth}"
 
 # ---- Main Shop GUI (/sell) ---------------------------------- #
-# This opens the 9x5 category browsing menu.
+# This opens the 9x6 sell GUI where players place items to sell.
+# The bottom-right corner has a "Sell" button (lime glass pane).
+# Closing the GUI also sells all items inside.
 
 gui:
   title: "&8&lShop"
-  size: 45
+  size: 54
 
 # ---- Sell All GUI (/sellall) -------------------------------- #
 # Simple one-button GUI to sell everything in your inventory.
@@ -88,9 +90,24 @@ sell-all-gui:
     - "&eYour current Multipliers:"
     - "{multipliers}"
 
-# ---- Category order (bottom row of /sell GUI, left to right) #
+# ---- Sell Multi GUI (/sellmulti) ----------------------------- #
+# 1x9 GUI showing all category multipliers at a glance.
+# Clicking a category opens its progress path.
+
+sell-multi-gui:
+  title: "&8&lMultipliers"
+
+# ---- Worth GUI (/sellworth, /worth) -------------------------- #
+# Paginated item prices browser with category filter.
+
+worth-gui:
+  title: "&8&lItem Prices"
+  filter-all: "&e&lFILTER: &fAll"
+  filter-category: "&e&lFILTER: &f"
+
+# ---- Category order (shown in /sellmulti and /sellworth) ---- #
 # These must match the top-level keys in price.yml.
-# Up to 9 entries shown.
+# Up to 9 entries shown in the multiplier GUI.
 category-order:
   - armortools
   - blocks
@@ -196,6 +213,11 @@ icons:
     lore:
       - "&7Go back without selling."
 
+  # ── Sell button (in /sell GUI, bottom-right) ──────────────────
+  sell-button:
+    material: "LIME_STAINED_GLASS_PANE"
+    name: "&a&lSell"
+
   # ── Category Items GUI ─────────────────────────────────────────
   sell-category:
     material: "GOLD_INGOT"
@@ -214,9 +236,106 @@ icons:
       - "&7Close the leaderboard."
 
 # ---- Messages ---------------------------------------------- #
+# Every piece of text shown to players can be customised here.
+# & colour codes are supported. Placeholders are listed per entry.
 messages:
   prefix: "&8[&aSellPlugin&8] "
   no-permission: "&cYou do not have permission for this."
   sold-items: "&aYou sold &e{amount} &aitems for &e${price}&a!"
   nothing-to-sell: "&cYou have no sellable items in your inventory."
   economy-error: "&cAn economy error occurred. Please contact an admin."
+
+  # ── Commands / console messages ───────────────────────────────
+  player-only-command: "&cOnly players can use this command."
+  reload-no-permission: "&cYou do not have permission to reload the config."
+  reload-success: "&aSellPlugin configuration reloaded."
+
+  # ── Shared decorative separator used in lots of lore lists ────
+  lore-separator: "&8━━━━━━━━━━━━━━━━━━━"
+
+  # ── Sell notification (title pop-up, {count} = items sold) ────
+  action-bar: "&a+${amount}"
+  sell-title: "&a+${amount}"
+  sell-subtitle: "&7You sold {count} item(s)"
+
+  # ── Main Shop GUI (/sell) ──────────────────────────────────────
+  shop:
+    # Inventory title. Rendered in small caps automatically.
+    title: "put items here to sell"
+    sell-button-name: "&a&lSell"
+    sell-value-label: "value: "
+    sell-empty: "no sellable items"
+    sell-click: "click to sell all items!"
+
+  # ── Sell Multi GUI (/sellmulti) ────────────────────────────────
+  sellmulti:
+    title: "&8&lMultipliers"
+    earned-label: "earned: "
+    daily-boost-label: "daily boost: "
+    effective-label: "effective: "
+    click-to-view: "click to view progress"
+
+  # ── Category Items GUI (list of items in a category) ──────────
+  category-items:
+    title-suffix: "&8 – Items"
+    total-items: "&7Total items: {count}"
+    page-indicator: "&fPage {page} / {total}"
+    category-label: "category: "
+    items-label: "items: "
+    earn-label: "earn: "
+    no-items-to-sell: "no items to sell."
+
+  # ── Category Progress GUI (multiplier snake path) ─────────────
+  category-progress:
+    daily-boost-title: "&6&l\uD83D\uDD25 Daily Boost Active!"
+    daily-boost-bonus-label: "bonus: "
+    daily-boost-effective-label: "effective: "
+    daily-boost-resets: "resets at midnight."
+    back-lore: "return to the main menu."
+    node-multiplier-suffix: "multiplier"
+    node-status-label: "status: "
+    node-status-completed: "completed"
+    node-status-in-progress: "in progress"
+    node-status-locked: "locked"
+    node-click-to-view: "click to view items & prices"
+    node-earned-label: "earned: "
+    node-required-label: "required: "
+    node-progress-label: "progress: "
+    node-need-label: "need: "
+    node-need-suffix: "more to unlock"
+
+  # ── Confirm Sell (category) GUI ────────────────────────────────
+  confirm-sell:
+    title-prefix: "sell your "
+    items-label: "items: "
+    value-label: "value: "
+    confirm-lore-line1: "sell all "
+    confirm-lore-line2: " items"
+    confirm-lore-line3: "from your inventory."
+    confirm-earn: "you will earn: $"
+    cancel-lore: "go back without selling."
+
+  # ── Confirm Sell-All GUI ───────────────────────────────────────
+  confirm-sell-all:
+    title: "confirm sell all"
+    items-label: "items: "
+    value-label: "value: "
+    confirm-lore: "sell all items from your inventory."
+    confirm-earn: "you will earn: $"
+    cancel-lore: "go back without selling."
+
+  # ── Top Sellers Leaderboard GUI ────────────────────────────────
+  top-sell:
+    title: "top sellers"
+    close-lore: "close the leaderboard."
+    prev-page-lore: "previous page."
+    next-page-lore: "next page."
+    total-players: "total players: "
+    page-indicator: "page {page} / {total}"
+    total-earned-label: "total earned: "
+
+  # ── Worth GUI (/sellworth, /worth) ─────────────────────────────
+  worth-gui:
+    title: "&8&lItem Prices"
+    filter-all: "&e&lFILTER: &fAll"
+    filter-category: "&e&lFILTER: &f"

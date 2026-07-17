@@ -2,7 +2,6 @@ package com.yourname.sellplugin.command;
 
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.gui.ShopMainGUI;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,16 +19,16 @@ public class SellCommand implements CommandExecutor {
         // Handle /sell reload
         if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
             if (!sender.hasPermission("sellplugin.reload")) {
-                sender.sendMessage(ChatColor.RED + "You do not have permission to reload the config.");
+                sender.sendMessage(plugin.getConfigManager().getText("reload-no-permission", "&cYou do not have permission to reload the config."));
                 return true;
             }
             plugin.getConfigManager().reload();
-            sender.sendMessage(ChatColor.GREEN + "SellPlugin configuration reloaded.");
+            sender.sendMessage(plugin.getConfigManager().getText("reload-success", "&aSellPlugin configuration reloaded."));
             return true;
         }
 
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("Only players can use this command.");
+            sender.sendMessage(plugin.getConfigManager().getText("player-only-command", "&cOnly players can use this command."));
             return true;
         }
 

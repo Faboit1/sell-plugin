@@ -64,7 +64,7 @@ public class TopSellGUI implements InventoryHolder {
 
         ConfigManager cfg = plugin.getConfigManager();
         String title = ChatColor.DARK_GRAY + "" + ChatColor.BOLD
-                + SmallCaps.convert("top sellers");
+                + SmallCaps.convert(cfg.getText("top-sell.title", "top sellers"));
         this.inv = Bukkit.createInventory(this, SIZE, title);
         populate();
     }
@@ -100,7 +100,7 @@ public class TopSellGUI implements InventoryHolder {
 
         // Close button
         List<String> closeLore = cfg.getIconLore("topsell-close",
-                Collections.singletonList(ChatColor.GRAY + SmallCaps.convert("close the leaderboard.")));
+                Collections.singletonList(ChatColor.GRAY + SmallCaps.convert(cfg.getText("top-sell.close-lore", "close the leaderboard."))));
         inv.setItem(SLOT_CLOSE, makeItem(
                 cfg.getIconMaterial("topsell-close", Material.BARRIER),
                 cfg.getIconName("topsell-close", "&c&l" + SmallCaps.convert("close")),
@@ -109,7 +109,7 @@ public class TopSellGUI implements InventoryHolder {
         // Previous page
         if (page > 0) {
             List<String> prevLore = cfg.getIconLore("prev-page",
-                    Collections.singletonList(ChatColor.GRAY + SmallCaps.convert("previous page.")));
+                    Collections.singletonList(ChatColor.GRAY + SmallCaps.convert(cfg.getText("top-sell.prev-page-lore", "previous page."))));
             inv.setItem(SLOT_PREV, makeItem(
                     cfg.getIconMaterial("prev-page", Material.ARROW),
                     cfg.getIconName("prev-page", "&e← " + SmallCaps.convert("previous")),
@@ -119,16 +119,18 @@ public class TopSellGUI implements InventoryHolder {
         // Page indicator
         int totalPages = Math.max(1, (int) Math.ceil((double) entries.size() / ENTRIES_PER_PAGE));
         List<String> infoLore = Collections.singletonList(
-                ChatColor.GRAY + SmallCaps.convert("total players: ") + entries.size());
+                ChatColor.GRAY + SmallCaps.convert(cfg.getText("top-sell.total-players", "total players: ")) + entries.size());
         inv.setItem(SLOT_INFO, makeItem(
                 cfg.getIconMaterial("page-indicator", Material.PAPER),
-                ChatColor.WHITE + SmallCaps.convert("page ") + (page + 1) + " / " + totalPages,
+                ChatColor.WHITE + SmallCaps.convert(cfg.getText("top-sell.page-indicator", "page {page} / {total}")
+                        .replace("{page}", String.valueOf(page + 1))
+                        .replace("{total}", String.valueOf(totalPages))),
                 infoLore));
 
         // Next page
         if ((page + 1) * ENTRIES_PER_PAGE < entries.size()) {
             List<String> nextLore = cfg.getIconLore("next-page",
-                    Collections.singletonList(ChatColor.GRAY + SmallCaps.convert("next page.")));
+                    Collections.singletonList(ChatColor.GRAY + SmallCaps.convert(cfg.getText("top-sell.next-page-lore", "next page."))));
             inv.setItem(SLOT_NEXT, makeItem(
                     cfg.getIconMaterial("next-page", Material.ARROW),
                     cfg.getIconName("next-page", "&e" + SmallCaps.convert("next") + " →"),
@@ -153,10 +155,11 @@ public class TopSellGUI implements InventoryHolder {
 
         // Lore: total earnings
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
-        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert("total earned: ")
+        String separator = plugin.getConfigManager().getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
+        lore.add(separator);
+        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(plugin.getConfigManager().getText("top-sell.total-earned-label", "total earned: "))
                 + ChatColor.GREEN + "$" + NumberFormatter.format(entry.totalEarnings));
-        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━");
+        lore.add(separator);
         meta.setLore(lore);
 
         skull.setItemMeta(meta);

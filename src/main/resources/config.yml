@@ -65,11 +65,13 @@ worth:
   format: "&7Worth &a&l${worth}"
 
 # ---- Main Shop GUI (/sell) ---------------------------------- #
-# This opens the 9x5 category browsing menu.
+# This opens the 9x6 sell GUI where players place items to sell.
+# The bottom-right corner has a "Sell" button (lime glass pane).
+# Closing the GUI also sells all items inside.
 
 gui:
   title: "&8&lShop"
-  size: 45
+  size: 54
 
 # ---- Sell All GUI (/sellall) -------------------------------- #
 # Simple one-button GUI to sell everything in your inventory.
@@ -88,9 +90,24 @@ sell-all-gui:
     - "&eYour current Multipliers:"
     - "{multipliers}"
 
-# ---- Category order (bottom row of /sell GUI, left to right) #
+# ---- Sell Multi GUI (/sellmulti) ----------------------------- #
+# 1x9 GUI showing all category multipliers at a glance.
+# Clicking a category opens its progress path.
+
+sell-multi-gui:
+  title: "&8&lMultipliers"
+
+# ---- Worth GUI (/sellworth, /worth) -------------------------- #
+# Paginated item prices browser with category filter.
+
+worth-gui:
+  title: "&8&lItem Prices"
+  filter-all: "&e&lFILTER: &fAll"
+  filter-category: "&e&lFILTER: &f"
+
+# ---- Category order (shown in /sellmulti and /sellworth) ---- #
 # These must match the top-level keys in price.yml.
-# Up to 9 entries shown.
+# Up to 9 entries shown in the multiplier GUI.
 category-order:
   - armortools
   - blocks
@@ -196,6 +213,11 @@ icons:
     lore:
       - "&7Go back without selling."
 
+  # ── Sell button (in /sell GUI, bottom-right) ──────────────────
+  sell-button:
+    material: "LIME_STAINED_GLASS_PANE"
+    name: "&a&lSell"
+
   # ── Category Items GUI ─────────────────────────────────────────
   sell-category:
     material: "GOLD_INGOT"
@@ -240,10 +262,18 @@ messages:
   shop:
     # Inventory title. Rendered in small caps automatically.
     title: "put items here to sell"
-    value-label: "value: "
-    multiplier-label: "multiplier: "
+    sell-button-name: "&a&lSell"
+    sell-value-label: "value: "
+    sell-empty: "no sellable items"
+    sell-click: "click to sell all items!"
+
+  # ── Sell Multi GUI (/sellmulti) ────────────────────────────────
+  sellmulti:
+    title: "&8&lMultipliers"
+    earned-label: "earned: "
     daily-boost-label: "daily boost: "
-    click-to-view: "click to view items & prices!"
+    effective-label: "effective: "
+    click-to-view: "click to view progress"
 
   # ── Category Items GUI (list of items in a category) ──────────
   category-items:
@@ -303,3 +333,9 @@ messages:
     total-players: "total players: "
     page-indicator: "page {page} / {total}"
     total-earned-label: "total earned: "
+
+  # ── Worth GUI (/sellworth, /worth) ─────────────────────────────
+  worth-gui:
+    title: "&8&lItem Prices"
+    filter-all: "&e&lFILTER: &fAll"
+    filter-category: "&e&lFILTER: &f"

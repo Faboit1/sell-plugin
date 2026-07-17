@@ -16,20 +16,27 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 /**
- * Main 9×5 shop GUI.
- * Rows 1-4 (slots 0-35): empty area – players can place items here to sell.
- * Row 5 (slots 36-44):   up to 9 category buttons with proper icons.
+ * Main 9×6 sell GUI.
+ * Rows 0-4 (slots 0-44): empty area – players can place items here to sell.
+ * Row 5 (slot 53):        Sell button (lime glass pane, bottom-right).
  *
- * When the GUI is closed, every sellable item left in slots 0-35 is sold
+ * When the GUI is closed, every sellable item left in the placement area is sold
  * automatically and non-sellable items are returned to the player.
+ * Clicking the Sell button also triggers selling all items.
  */
 public class ShopMainGUI implements InventoryHolder {
 
-    private static final int ROWS = 5;
-    private static final int SIZE = ROWS * 9; // 45
+    private static final int ROWS = 6;
+    private static final int SIZE = ROWS * 9; // 54
 
-    /** First slot of the protected bottom row (category buttons). */
-    public static final int BOTTOM_ROW_START = 36;
+    /** First slot of the protected bottom row (Sell button row). */
+    public static final int BOTTOM_ROW_START = 45;
+
+    /** The Sell button slot (bottom-right corner). */
+    public static final int SLOT_SELL_BUTTON = 53;
+
+    /** Number of item placement slots (rows 0-4). */
+    public static final int ITEM_AREA_END = 45;
 
     private final Inventory inv;
     private final SellPlugin plugin;
@@ -48,47 +55,61 @@ public class ShopMainGUI implements InventoryHolder {
     private void populate() {
         ConfigManager cfg = plugin.getConfigManager();
 
-        // Rows 1-4 (slots 0-35) are left EMPTY for item placement.
+        // Rows 0-4 (slots 0-44) are left EMPTY for item placement.
 
-        // --- Category buttons in bottom row (slots 36-44) ---
-        List<String> catOrder = cfg.getCategoryOrder();
+        // Fill bottom row with filler glass
+        Material fillerMat = cfg.getFillerBlock();
+        ItemStack bg = makeItem(fillerMat, " ", Collections.emptyList());
+        for (int slot = BOTTOM_ROW_START; slot < SIZE; slot++) inv.setItem(slot, bg);
 
-        // Fill bottom row with dark-gray glass as spacer
-        ItemStack catBg = makeItem(Material.GRAY_STAINED_GLASS_PANE, " ", Collections.emptyList());
-        for (int slot = BOTTOM_ROW_START; slot <= 44; slot++) inv.setItem(slot, catBg);
-
-        for (int i = 0; i < Math.min(9, catOrder.size()); i++) {
-            inv.setItem(BOTTOM_ROW_START + i, buildCategoryButton(catOrder.get(i)));
-        }
+        // Sell button in bottom-right corner (slot 53)
+        inv.setItem(SLOT_SELL_BUTTON, buildSellButton());
     }
 
-    private ItemStack buildCategoryButton(String catId) {
+    /**
+     * Rebuild the sell button with updated value preview.
+     * Call this to refresh the hover text showing sell value.
+     */
+    public void refreshSellButton() {
+        inv.setItem(SLOT_SELL_BUTTON, buildSellButton());
+    }
+
+    private ItemStack buildSellButton() {
         ConfigManager cfg = plugin.getConfigManager();
 
-        double value = plugin.getSellManager().calculateCategoryValue(player, catId);
-        double multiplier = plugin.getMultiplierManager().getMultiplier(player, catId);
-        double dailyBonus = plugin.getDailyBonusManager().getDailyBonus(catId);
-        double effective  = multiplier + dailyBonus;
+        // Calculate the value of items currently in the GUI
+        double totalValue = calculateGuiItemsValue();
 
         String separator = cfg.getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
 
         List<String> lore = new ArrayList<>();
         lore.add(separator);
-        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("shop.value-label", "value: "))
-                + ChatColor.GREEN + "$" + NumberFormatter.format(value));
-        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("shop.multiplier-label", "multiplier: "))
-                + ChatColor.AQUA + String.format("%.2fx", effective));
-        if (dailyBonus > 0) {
-            lore.add(ChatColor.GOLD + " ▸ \uD83D\uDD25 " + SmallCaps.convert(cfg.getText("shop.daily-boost-label", "daily boost: "))
-                    + ChatColor.YELLOW + "+" + String.format("%.2f", dailyBonus) + "x");
+        if (totalValue > 0) {
+            lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("shop.sell-value-label", "value: "))
+                    + ChatColor.GREEN + "$" + NumberFormatter.format(totalValue));
+        } else {
+            lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("shop.sell-empty", "no sellable items")));
         }
         lore.add(separator);
-        lore.add(ChatColor.YELLOW + " ✦ " + SmallCaps.convert(cfg.getText("shop.click-to-view", "click to view items & prices!")));
+        lore.add(ChatColor.YELLOW + " ✦ " + SmallCaps.convert(cfg.getText("shop.sell-click", "click to sell all items!")));
 
-        List<String> extraLore = cfg.getCategoryLore(catId);
-        if (!extraLore.isEmpty()) lore.addAll(extraLore);
+        String sellButtonName = cfg.getText("shop.sell-button-name", "&a&lSell");
 
-        return makeItem(cfg.getCategoryMaterial(catId), cfg.getCategoryDisplayName(catId), lore);
+        Material sellMat = cfg.getIconMaterial("sell-button", Material.LIME_STAINED_GLASS_PANE);
+        return makeItem(sellMat, sellButtonName, lore);
+    }
+
+    /**
+     * Calculate the total sell value of all items currently placed in the GUI.
+     */
+    public double calculateGuiItemsValue() {
+        double totalValue = 0.0;
+        for (int i = 0; i < ITEM_AREA_END; i++) {
+            ItemStack item = inv.getItem(i);
+            if (item == null || item.getType() == Material.AIR) continue;
+            totalValue += plugin.getSellManager().calculateItemWorth(player, item);
+        }
+        return totalValue;
     }
 
     private ItemStack makeItem(Material mat, String name, List<String> lore) {
@@ -115,12 +136,7 @@ public class ShopMainGUI implements InventoryHolder {
         return plugin;
     }
 
-    /** Returns the category ID for a bottom-row slot (36-44), or null if not a category slot. */
-    public String getCategoryAtSlot(int slot) {
-        if (slot < BOTTOM_ROW_START || slot > 44) return null;
-        List<String> order = plugin.getConfigManager().getCategoryOrder();
-        int idx = slot - BOTTOM_ROW_START;
-        if (idx < order.size()) return order.get(idx);
-        return null;
+    public Player getPlayer() {
+        return player;
     }
 }

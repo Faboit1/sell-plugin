@@ -30,8 +30,17 @@ import java.util.List;
 
 public class WorthPacketListener {
 
+    // Invisible marker prefixed to the worth line we inject. It is built from
+    // valid formatting codes only, so it renders no glyphs, but lets us reliably
+    // recognise (and strip) our own line — both to avoid duplicates and to keep
+    // it out of items the client sends back to the server (creative mode).
+    private static final char SECTION = '\u00A7';
+    private static final String WORTH_MARKER =
+            "" + SECTION + '9' + SECTION + '8' + SECTION + '9' + SECTION + '8' + SECTION + 'r';
+
     private final SellPlugin plugin;
     private PacketListener packetListener;
+    private PacketListener creativeListener;
 
     public WorthPacketListener(SellPlugin plugin) {
         this.plugin = plugin;
@@ -81,33 +90,115 @@ public class WorthPacketListener {
             }
         };
         protocolManager.addPacketListener(packetListener);
+
+        // Creative-mode clients echo the items they see back to the server. Strip
+        // our injected worth line from those inbound items so it never gets baked
+        // into the real ItemStack (which would otherwise produce duplicate lines).
+        creativeListener = new PacketAdapter(plugin, ListenerPriority.NORMAL,
+                PacketType.Play.Client.SET_CREATIVE_SLOT) {
+
+            @Override
+            public void onPacketReceiving(PacketEvent event) {
+                if (event.getPacket().getItemModifier().size() <= 0) return;
+                ItemStack item = event.getPacket().getItemModifier().read(0);
+                ItemStack cleaned = stripWorthLore(item);
+                if (cleaned != item) {
+                    event.getPacket().getItemModifier().write(0, cleaned);
+                }
+            }
+        };
+        protocolManager.addPacketListener(creativeListener);
     }
 
     public void unregister() {
-        if (packetListener == null) return;
-        ProtocolLibrary.getProtocolManager().removePacketListener(packetListener);
-        packetListener = null;
+        ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
+        if (packetListener != null) {
+            protocolManager.removePacketListener(packetListener);
+            packetListener = null;
+        }
+        if (creativeListener != null) {
+            protocolManager.removePacketListener(creativeListener);
+            creativeListener = null;
+        }
     }
 
     private ItemStack addWorthLore(Player player, ItemStack original) {
         if (original == null || original.getType().isAir()) return original;
 
         double worth = plugin.getSellManager().calculateItemWorth(player, original);
-        if (worth <= 0) return original;
+
+        ItemMeta meta = original.getItemMeta();
+        boolean hadWorthLine = meta != null && meta.hasLore() && loreHasWorthLine(meta.getLore());
+
+        // Nothing to add and nothing stale to clean up -> leave the item untouched.
+        if (worth <= 0 && !hadWorthLine) return original;
 
         ItemStack clone = original.clone();
-        ItemMeta meta = clone.getItemMeta();
+        meta = clone.getItemMeta();
         if (meta == null) return original;
 
+        // Always start from lore without any previously injected/baked worth line
+        // so we never stack duplicates.
         List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
-        if (!lore.isEmpty()) {
-            lore.add("");
+        removeWorthLines(lore);
+
+        if (worth > 0) {
+            if (!lore.isEmpty()) {
+                lore.add("");
+            }
+            lore.add(WORTH_MARKER + plugin.getConfigManager().getWorthFormat()
+                    .replace("{worth}", NumberFormatter.format(worth)));
         }
-        lore.add(plugin.getConfigManager().getWorthFormat()
-                .replace("{worth}", NumberFormatter.format(worth)));
-        meta.setLore(lore);
+
+        meta.setLore(lore.isEmpty() ? null : lore);
         clone.setItemMeta(meta);
         return clone;
+    }
+
+    /**
+     * Returns a copy of {@code item} with any injected worth line removed, or the
+     * original reference if it carried none.
+     */
+    private ItemStack stripWorthLore(ItemStack item) {
+        if (item == null || item.getType().isAir()) return item;
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || !meta.hasLore()) return item;
+
+        List<String> lore = new ArrayList<>(meta.getLore());
+        if (!removeWorthLines(lore)) return item;
+
+        ItemStack clone = item.clone();
+        ItemMeta cloneMeta = clone.getItemMeta();
+        cloneMeta.setLore(lore.isEmpty() ? null : lore);
+        clone.setItemMeta(cloneMeta);
+        return clone;
+    }
+
+    private boolean loreHasWorthLine(List<String> lore) {
+        for (String line : lore) {
+            if (line != null && line.startsWith(WORTH_MARKER)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Removes every injected worth line (and the blank separator we place before
+     * it) from {@code lore} in place. Returns {@code true} if anything changed.
+     */
+    private boolean removeWorthLines(List<String> lore) {
+        boolean changed = false;
+        for (int i = lore.size() - 1; i >= 0; i--) {
+            String line = lore.get(i);
+            if (line == null || !line.startsWith(WORTH_MARKER)) continue;
+            lore.remove(i);
+            changed = true;
+            // Drop the blank separator we added directly before the worth line.
+            if (i - 1 >= 0 && lore.get(i - 1).isEmpty()) {
+                lore.remove(i - 1);
+            }
+        }
+        return changed;
     }
 
     private boolean shouldDecorate(Player player) {

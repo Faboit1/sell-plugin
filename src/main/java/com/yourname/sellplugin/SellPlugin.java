@@ -9,6 +9,7 @@ import com.yourname.sellplugin.command.WorthCommand;
 import com.yourname.sellplugin.economy.EconomyManager;
 import com.yourname.sellplugin.gui.GUIListener;
 import com.yourname.sellplugin.listener.WorthPacketListener;
+import com.yourname.sellplugin.listener.WorthRefreshListener;
 import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.DailyBonusManager;
 import com.yourname.sellplugin.manager.MultiplierManager;
@@ -52,6 +53,7 @@ public class SellPlugin extends JavaPlugin {
         getCommand("sellmulti").setExecutor(new SellMultiCommand(this));
         getCommand("sellworth").setExecutor(new WorthCommand(this));
         getServer().getPluginManager().registerEvents(new GUIListener(this), this);
+        getServer().getPluginManager().registerEvents(new WorthRefreshListener(this), this);
 
         worthPacketListener = new WorthPacketListener(this);
         worthPacketListener.register();

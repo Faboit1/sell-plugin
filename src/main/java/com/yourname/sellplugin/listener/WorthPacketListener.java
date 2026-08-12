@@ -59,8 +59,11 @@ public class WorthPacketListener {
 
             @Override
             public void onPacketSending(PacketEvent event) {
-                if (!WorthPacketListener.this.plugin.getConfigManager().isWorthEnabled()) return;
-                if (!shouldDecorate(event.getPlayer())) return;
+                Player viewer = event.getPlayer();
+                if (viewer == null) return;
+                if (!WorthPacketListener.this.plugin.getWorthVisibilityManager()
+                        .isVisible(viewer.getUniqueId())) return;
+                if (!shouldDecorate(viewer)) return;
 
                 if (event.getPacketType() == PacketType.Play.Server.SET_SLOT) {
                     if (event.getPacket().getItemModifier().size() <= 0) return;
@@ -143,7 +146,7 @@ public class WorthPacketListener {
         removeWorthLines(lore);
 
         if (worth > 0) {
-            if (!lore.isEmpty()) {
+            if (!lore.isEmpty() && !isBlank(lore.get(lore.size() - 1))) {
                 lore.add("");
             }
             lore.add(WORTH_MARKER + plugin.getConfigManager().getWorthFormat()
@@ -177,7 +180,7 @@ public class WorthPacketListener {
 
     private boolean loreHasWorthLine(List<String> lore) {
         for (String line : lore) {
-            if (line != null && line.startsWith(WORTH_MARKER)) return true;
+            if (line != null && line.contains(WORTH_MARKER)) return true;
         }
         return false;
     }
@@ -190,15 +193,36 @@ public class WorthPacketListener {
         boolean changed = false;
         for (int i = lore.size() - 1; i >= 0; i--) {
             String line = lore.get(i);
-            if (line == null || !line.startsWith(WORTH_MARKER)) continue;
+            // Use contains() rather than startsWith(): when a creative client
+            // echoes our lore back it can arrive with an extra leading colour
+            // code (e.g. "§f") prepended, which would defeat a prefix match and
+            // let the line bake in / duplicate.
+            if (line == null || !line.contains(WORTH_MARKER)) continue;
             lore.remove(i);
             changed = true;
             // Drop the blank separator we added directly before the worth line.
-            if (i - 1 >= 0 && lore.get(i - 1).isEmpty()) {
+            if (i - 1 >= 0 && isBlank(lore.get(i - 1))) {
                 lore.remove(i - 1);
             }
         }
         return changed;
+    }
+
+    /**
+     * Treats a line as blank if, after stripping any formatting codes, nothing
+     * printable remains. Round-tripped separators can come back as "§f" etc.
+     */
+    private boolean isBlank(String line) {
+        if (line == null || line.isEmpty()) return true;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == SECTION) {
+                i++; // skip the code character that follows the section sign
+                continue;
+            }
+            if (!Character.isWhitespace(c)) return false;
+        }
+        return true;
     }
 
     private boolean shouldDecorate(Player player) {

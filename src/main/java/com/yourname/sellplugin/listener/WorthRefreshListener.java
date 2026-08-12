@@ -1,6 +1,7 @@
 package com.yourname.sellplugin.listener;
 
 import com.yourname.sellplugin.SellPlugin;
+import com.yourname.sellplugin.util.Scheduler;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -47,8 +48,9 @@ public class WorthRefreshListener implements Listener {
 
     private void refresh(Player player) {
         if (!plugin.getConfigManager().isWorthEnabled()) return;
-        // Run next tick so the inventory reflects the change that triggered us.
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        // Run next tick, on the player's own region thread (Folia-safe), so the
+        // inventory reflects the change that triggered us.
+        Scheduler.runEntityLater(plugin, player, () -> {
             if (player.isOnline()) {
                 player.updateInventory();
             }

@@ -250,6 +250,11 @@ messages:
   reload-no-permission: "&cYou do not have permission to reload the config."
   reload-success: "&aSellPlugin configuration reloaded."
 
+  # ── /showworth (per-player worth tooltip toggle) ──────────────
+  showworth-usage: "&cUsage: /showworth [true|false]"
+  showworth-enabled: "&aItem worth is now &lshown&r&a in your inventory."
+  showworth-disabled: "&eItem worth is now &lhidden&r&e in your inventory."
+
   # ── Shared decorative separator used in lots of lore lists ────
   lore-separator: "&8━━━━━━━━━━━━━━━━━━━"
 

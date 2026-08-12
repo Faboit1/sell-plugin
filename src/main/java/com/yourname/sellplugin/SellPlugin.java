@@ -4,6 +4,7 @@ import com.yourname.sellplugin.command.SellAllCommand;
 import com.yourname.sellplugin.command.SellCommand;
 import com.yourname.sellplugin.command.SellMultiCommand;
 import com.yourname.sellplugin.command.FastSellAllCommand;
+import com.yourname.sellplugin.command.ShowWorthCommand;
 import com.yourname.sellplugin.command.TopSellCommand;
 import com.yourname.sellplugin.command.WorthCommand;
 import com.yourname.sellplugin.economy.EconomyManager;
@@ -15,6 +16,7 @@ import com.yourname.sellplugin.manager.DailyBonusManager;
 import com.yourname.sellplugin.manager.MultiplierManager;
 import com.yourname.sellplugin.manager.PriceManager;
 import com.yourname.sellplugin.manager.SellManager;
+import com.yourname.sellplugin.manager.WorthVisibilityManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class SellPlugin extends JavaPlugin {
@@ -25,6 +27,7 @@ public class SellPlugin extends JavaPlugin {
     private MultiplierManager multiplierManager;
     private DailyBonusManager dailyBonusManager;
     private SellManager sellManager;
+    private WorthVisibilityManager worthVisibilityManager;
     private WorthPacketListener worthPacketListener;
 
     @Override
@@ -38,6 +41,7 @@ public class SellPlugin extends JavaPlugin {
         multiplierManager = new MultiplierManager(this);
         dailyBonusManager = new DailyBonusManager(this);
         sellManager = new SellManager(this);
+        worthVisibilityManager = new WorthVisibilityManager(this);
 
         economyManager = new EconomyManager(this);
         if (!economyManager.setupEconomy()) {
@@ -52,6 +56,9 @@ public class SellPlugin extends JavaPlugin {
         getCommand("topsell").setExecutor(new TopSellCommand(this));
         getCommand("sellmulti").setExecutor(new SellMultiCommand(this));
         getCommand("sellworth").setExecutor(new WorthCommand(this));
+        ShowWorthCommand showWorthCommand = new ShowWorthCommand(this);
+        getCommand("showworth").setExecutor(showWorthCommand);
+        getCommand("showworth").setTabCompleter(showWorthCommand);
         getServer().getPluginManager().registerEvents(new GUIListener(this), this);
         getServer().getPluginManager().registerEvents(new WorthRefreshListener(this), this);
 
@@ -66,6 +73,9 @@ public class SellPlugin extends JavaPlugin {
         if (multiplierManager != null) {
             multiplierManager.saveAll();
         }
+        if (worthVisibilityManager != null) {
+            worthVisibilityManager.saveNow();
+        }
         if (worthPacketListener != null) {
             worthPacketListener.unregister();
         }
@@ -78,4 +88,5 @@ public class SellPlugin extends JavaPlugin {
     public MultiplierManager getMultiplierManager() { return multiplierManager; }
     public DailyBonusManager getDailyBonusManager() { return dailyBonusManager; }
     public SellManager getSellManager()        { return sellManager; }
+    public WorthVisibilityManager getWorthVisibilityManager() { return worthVisibilityManager; }
 }

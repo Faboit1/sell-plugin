@@ -59,8 +59,11 @@ public class WorthPacketListener {
 
             @Override
             public void onPacketSending(PacketEvent event) {
-                if (!WorthPacketListener.this.plugin.getConfigManager().isWorthEnabled()) return;
-                if (!shouldDecorate(event.getPlayer())) return;
+                Player viewer = event.getPlayer();
+                if (viewer == null) return;
+                if (!WorthPacketListener.this.plugin.getWorthVisibilityManager()
+                        .isVisible(viewer.getUniqueId())) return;
+                if (!shouldDecorate(viewer)) return;
 
                 if (event.getPacketType() == PacketType.Play.Server.SET_SLOT) {
                     if (event.getPacket().getItemModifier().size() <= 0) return;

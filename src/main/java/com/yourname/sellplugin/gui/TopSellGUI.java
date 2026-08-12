@@ -4,6 +4,7 @@ import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.MultiplierManager.LeaderboardEntry;
 import com.yourname.sellplugin.util.NumberFormatter;
+import com.yourname.sellplugin.util.Scheduler;
 import com.yourname.sellplugin.util.SmallCaps;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -89,7 +90,8 @@ public class TopSellGUI implements InventoryHolder {
             int rank = i + 1;
             // Schedule each skull with a small staggered delay to avoid any
             // potential server-side profile look-up spikes (2 ticks apart).
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            // Runs on the viewer's region thread so it is Folia-safe.
+            Scheduler.runEntityLater(plugin, viewer, () -> {
                 if (viewer.isOnline()) {
                     inv.setItem(slot, buildEntryHead(entry, rank));
                 }

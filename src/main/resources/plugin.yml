@@ -2,6 +2,7 @@ name: SellPlugin
 version: 2.2.0
 main: com.yourname.sellplugin.SellPlugin
 api-version: 1.13
+folia-supported: true
 softdepend: [Vault, CoinsEngine, ProtocolLib]
 
 commands:
@@ -19,6 +20,11 @@ commands:
     description: Opens the item prices GUI to browse item values.
     usage: /sellworth
     aliases: [worth, prices, itemprices]
+    permission: sellplugin.use
+  showworth:
+    description: Show or hide the item worth tooltip for yourself.
+    usage: /showworth [true|false]
+    aliases: [toggleworth, worthdisplay]
     permission: sellplugin.use
   sellall:
     description: Opens the quick sell-all GUI.

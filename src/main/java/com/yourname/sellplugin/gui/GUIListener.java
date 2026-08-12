@@ -2,6 +2,7 @@ package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.SellManager;
+import com.yourname.sellplugin.util.Scheduler;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -89,8 +90,9 @@ public class GUIListener implements Listener {
                 }
 
                 // Slots 0-44: allow item placement / removal
-                // After any click, schedule a sell button refresh
-                plugin.getServer().getScheduler().runTaskLater(plugin, shopGUI::refreshSellButton, 1L);
+                // After any click, schedule a sell button refresh (on the
+                // player's own region thread for Folia compatibility).
+                Scheduler.runEntityLater(plugin, player, shopGUI::refreshSellButton, 1L);
                 return;
             }
 

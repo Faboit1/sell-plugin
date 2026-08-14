@@ -166,8 +166,6 @@ public class CategoryItemsGUI implements InventoryHolder {
         PriceManager pm = plugin.getPriceManager();
         double base = pm.getPrice(itemKey);
         String itemCategory = pm.getCategory(itemKey);
-        double earned = plugin.getMultiplierManager().getMultiplier(player, itemCategory);
-        double daily  = plugin.getDailyBonusManager().getDailyBonus(itemCategory);
         double effectiveMultiplier = plugin.getMultiplierManager().getEffectiveMultiplier(player, itemCategory);
         double effective = base * effectiveMultiplier;
 
@@ -178,14 +176,8 @@ public class CategoryItemsGUI implements InventoryHolder {
         lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━");
         lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Base:  "
                 + ChatColor.GREEN + "$" + NumberFormatter.format(base));
-        if (daily > 0) {
-            lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Mult:  "
-                    + ChatColor.AQUA + String.format("%.2fx", earned)
-                    + ChatColor.GOLD + " (+" + String.format("%.2fx", daily) + " today)");
-        } else {
-            lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Mult:  "
-                    + ChatColor.AQUA + String.format("%.2fx", effectiveMultiplier));
-        }
+        lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Mult:  "
+                + ChatColor.AQUA + String.format("%.2fx", effectiveMultiplier));
         lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Price: "
                 + ChatColor.GREEN + "$" + NumberFormatter.format(effective));
         lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━");
@@ -210,7 +202,7 @@ public class CategoryItemsGUI implements InventoryHolder {
         if (itemKey.contains(":")) {
             String[] parts = itemKey.split(":", 2);
             Material mat = Material.matchMaterial(parts[0]);
-            if (mat == null) return new ItemStack(Material.BARRIER);
+            if (mat == null || mat.isAir() || !mat.isItem()) return new ItemStack(Material.BARRIER);
 
             ItemStack item = new ItemStack(mat);
             ItemMeta meta = item.getItemMeta();
@@ -226,7 +218,8 @@ public class CategoryItemsGUI implements InventoryHolder {
             return item;
         }
         Material mat = Material.matchMaterial(itemKey);
-        return new ItemStack(mat != null ? mat : Material.BARRIER);
+        if (mat == null || mat.isAir() || !mat.isItem()) return new ItemStack(Material.BARRIER);
+        return new ItemStack(mat);
     }
 
     // ── Item clicked ─────────────────────────────────────────────────────────

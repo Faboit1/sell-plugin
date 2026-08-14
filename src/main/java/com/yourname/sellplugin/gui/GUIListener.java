@@ -35,12 +35,17 @@ public class GUIListener implements Listener {
 
         // ShopMainGUI: allow drags in the item-placement area (0-44),
         // cancel if any slot touches the protected bottom row (45-53).
-        if (holder instanceof ShopMainGUI) {
+        if (holder instanceof ShopMainGUI shopGUI) {
             for (int slot : e.getRawSlots()) {
                 if (slot >= ShopMainGUI.BOTTOM_ROW_START && slot <= 53) {
                     e.setCancelled(true);
                     return;
                 }
+            }
+            // Allow the drag, then refresh the sell button so the value updates.
+            Player dragger = (e.getWhoClicked() instanceof Player p) ? p : null;
+            if (dragger != null) {
+                Scheduler.runEntityLater(plugin, dragger, shopGUI::refreshSellButton, 1L);
             }
             return; // allow the drag
         }
@@ -71,8 +76,12 @@ public class GUIListener implements Listener {
         if (holder instanceof ShopMainGUI shopGUI) {
             Inventory clicked = e.getClickedInventory();
 
-            // Click in player inventory (bottom) – allow freely
+            // Click in player inventory (bottom) – allow freely, but a
+            // shift-click / number-key / move-to-other-inventory action can push
+            // an item up into the shop area without the top inventory being the
+            // clicked one. Schedule a sell-button refresh so the value updates.
             if (clicked != null && clicked.equals(player.getInventory())) {
+                Scheduler.runEntityLater(plugin, player, shopGUI::refreshSellButton, 1L);
                 return;
             }
 
@@ -318,7 +327,7 @@ public class GUIListener implements Listener {
             String cat = pl.getPriceManager().getCategory(key);
             double mult = pl.getMultiplierManager().getEffectiveMultiplier(player, cat);
             int amount = item.getAmount();
-            double earned = base * mult * amount;
+            double earned = pl.getSellManager().enchantedUnitPrice(item, base) * mult * amount;
             totalEarned += earned;
             totalItems += amount;
             categoryEarnings.merge(cat, earned, Double::sum);
@@ -392,7 +401,7 @@ public class GUIListener implements Listener {
             String cat = pl.getPriceManager().getCategory(key);
             double mult = pl.getMultiplierManager().getEffectiveMultiplier(player, cat);
             int amount = item.getAmount();
-            double earned = base * mult * amount;
+            double earned = pl.getSellManager().enchantedUnitPrice(item, base) * mult * amount;
             totalEarned += earned;
             totalItems += amount;
             categoryEarnings.merge(cat, earned, Double::sum);

@@ -5,9 +5,12 @@ import com.yourname.sellplugin.util.NumberFormatter;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.ShulkerBox;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,7 +39,7 @@ public class SellManager {
             ItemStack item = player.getInventory().getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
-            if (isShulkerBox(item)) {
+            if (sellShulker(item)) {
                 ShulkerSellData data = sellShulkerContents(player, item, null, null);
                 totalEarned += data.earned;
                 totalItems += data.items;
@@ -53,7 +56,7 @@ public class SellManager {
             String cat = plugin.getPriceManager().getCategory(key);
             double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
             int amount = item.getAmount();
-            double earned = base * mult * amount;
+            double earned = enchantedUnitPrice(item, base) * mult * amount;
             totalEarned += earned;
             totalItems += amount;
             categoryEarnings.merge(cat, earned, Double::sum);
@@ -76,7 +79,7 @@ public class SellManager {
             ItemStack item = player.getInventory().getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
-            if (isShulkerBox(item)) {
+            if (sellShulker(item)) {
                 ShulkerSellData data = sellShulkerContents(player, item, category, null);
                 totalEarned += data.earned;
                 totalItems += data.items;
@@ -95,7 +98,7 @@ public class SellManager {
 
             double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
             int amount = item.getAmount();
-            double earned = base * mult * amount;
+            double earned = enchantedUnitPrice(item, base) * mult * amount;
             totalEarned += earned;
             totalItems += amount;
             categoryEarnings.merge(cat, earned, Double::sum);
@@ -124,7 +127,7 @@ public class SellManager {
             ItemStack item = player.getInventory().getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
-            if (isShulkerBox(item)) {
+            if (sellShulker(item)) {
                 ShulkerSellData data = sellShulkerContents(player, item, null, itemKey);
                 totalEarned += data.earned;
                 totalItems += data.items;
@@ -136,7 +139,7 @@ public class SellManager {
             if (!itemKey.equalsIgnoreCase(key)) continue;
 
             int amount = item.getAmount();
-            double earned = base * mult * amount;
+            double earned = enchantedUnitPrice(item, base) * mult * amount;
             totalEarned += earned;
             totalItems += amount;
             categoryEarnings.merge(cat, earned, Double::sum);
@@ -155,7 +158,7 @@ public class SellManager {
         for (ItemStack item : player.getInventory().getStorageContents()) {
             if (item == null || item.getType() == Material.AIR) continue;
 
-            if (isShulkerBox(item)) {
+            if (sellShulker(item)) {
                 ShulkerSellData data = peekShulkerContents(player, item, null, null);
                 itemCount += data.items;
                 value += data.earned;
@@ -169,7 +172,7 @@ public class SellManager {
             String cat = plugin.getPriceManager().getCategory(key);
             double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
             itemCount += item.getAmount();
-            value += base * mult * item.getAmount();
+            value += enchantedUnitPrice(item, base) * mult * item.getAmount();
         }
         return new SellPreview(itemCount, value);
     }
@@ -182,7 +185,7 @@ public class SellManager {
         for (ItemStack item : player.getInventory().getStorageContents()) {
             if (item == null || item.getType() == Material.AIR) continue;
 
-            if (isShulkerBox(item)) {
+            if (sellShulker(item)) {
                 total += peekShulkerContents(player, item, category, null).items;
                 continue;
             }
@@ -199,11 +202,14 @@ public class SellManager {
     // Calculate value of sellable items in a category (with multiplier)
     // ---------------------------------------------------------------
     public double calculateCategoryValue(Player player, String category) {
+        // The multiplier depends only on the category, which is fixed here, so
+        // look it up once instead of once per matching item.
+        double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, category);
         double total = 0.0;
         for (ItemStack item : player.getInventory().getStorageContents()) {
             if (item == null || item.getType() == Material.AIR) continue;
 
-            if (isShulkerBox(item)) {
+            if (sellShulker(item)) {
                 total += peekShulkerContents(player, item, category, null).earned;
                 continue;
             }
@@ -214,8 +220,7 @@ public class SellManager {
             if (!category.equalsIgnoreCase(cat)) continue;
             double base = plugin.getPriceManager().getPrice(key);
             if (base <= 0) continue;
-            double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
-            total += base * mult * item.getAmount();
+            total += enchantedUnitPrice(item, base) * mult * item.getAmount();
         }
         return total;
     }
@@ -235,7 +240,7 @@ public class SellManager {
 
         String category = plugin.getPriceManager().getCategory(key);
         double multiplier = plugin.getMultiplierManager().getEffectiveMultiplier(player, category);
-        return base * multiplier * item.getAmount();
+        return enchantedUnitPrice(item, base) * multiplier * item.getAmount();
     }
 
     // ---------------------------------------------------------------
@@ -269,10 +274,12 @@ public class SellManager {
     public void sendSellNotification(Player player, double amount, int itemCount) {
         String formatted = NumberFormatter.format(amount);
 
-        // Action bar: always shown – "+$amount"
-        String actionBarText = plugin.getConfigManager().getText("action-bar", "&a+${amount}")
-                .replace("{amount}", formatted);
-        player.sendActionBar(actionBarText);
+        // Action bar: "+$amount" (toggleable)
+        if (plugin.getConfigManager().isActionBarEnabled()) {
+            String actionBarText = plugin.getConfigManager().getText("action-bar", "&a+${amount}")
+                    .replace("{amount}", formatted);
+            player.sendActionBar(actionBarText);
+        }
 
         // Title notification: only if enabled in config
         if (plugin.getConfigManager().isTitleNotificationEnabled()) {
@@ -307,9 +314,58 @@ public class SellManager {
     // Shulker box helpers
     // ---------------------------------------------------------------
 
-    /** Returns true if the item is any colour of shulker box. */
+    /**
+     * Returns true if the item is a shulker box of any colour, including the
+     * uncoloured {@code SHULKER_BOX} (whose name does <em>not</em> end with
+     * {@code _SHULKER_BOX}, which is why it used to be skipped).
+     */
     public static boolean isShulkerBox(ItemStack item) {
-        return item != null && item.getType().name().endsWith("_SHULKER_BOX");
+        if (item == null) return false;
+        Material type = item.getType();
+        return type == Material.SHULKER_BOX || type.name().endsWith("_SHULKER_BOX");
+    }
+
+    /** True when the item should be dived into and its contents sold. */
+    private boolean sellShulker(ItemStack item) {
+        return plugin.getConfigManager().isShulkerSellingEnabled() && isShulkerBox(item);
+    }
+
+    // ---------------------------------------------------------------
+    // Enchantment-aware unit pricing
+    // ---------------------------------------------------------------
+
+    /**
+     * Adjusts a single item's base price for its enchantments: each
+     * enchantment's configured value (× its level) is added to the base, then
+     * the total is multiplied by a factor (default 1.1) for every distinct
+     * enchantment on the item. Unenchanted items return the base unchanged.
+     */
+    public double enchantedUnitPrice(ItemStack item, double base) {
+        if (item == null || !plugin.getConfigManager().isEnchantmentPricingEnabled()) return base;
+
+        Map<Enchantment, Integer> enchants = collectEnchantments(item);
+        if (enchants.isEmpty()) return base;
+
+        double added = 0.0;
+        int count = 0;
+        for (Map.Entry<Enchantment, Integer> e : enchants.entrySet()) {
+            String key = e.getKey().getKey().getKey(); // e.g. "sharpness"
+            added += plugin.getConfigManager().getEnchantValue(key) * e.getValue();
+            count++;
+        }
+
+        double factor = plugin.getConfigManager().getEnchantMultiplierPerEnchantment();
+        return (base + added) * Math.pow(factor, count);
+    }
+
+    /** Merges an item's applied enchantments with any stored (book) enchantments. */
+    private Map<Enchantment, Integer> collectEnchantments(ItemStack item) {
+        Map<Enchantment, Integer> merged = new HashMap<>(item.getEnchantments());
+        ItemMeta meta = item.getItemMeta();
+        if (meta instanceof EnchantmentStorageMeta storage) {
+            storage.getStoredEnchants().forEach((ench, lvl) -> merged.merge(ench, lvl, Math::max));
+        }
+        return merged;
     }
 
     /**
@@ -343,7 +399,7 @@ public class SellManager {
 
             double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
             int amount = inner.getAmount();
-            double earned = base * mult * amount;
+            double earned = enchantedUnitPrice(inner, base) * mult * amount;
             totalEarned += earned;
             totalItems += amount;
             categoryEarnings.merge(cat, earned, Double::sum);
@@ -386,9 +442,10 @@ public class SellManager {
 
             double mult = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
             int amount = inner.getAmount();
-            totalEarned += base * mult * amount;
+            double earned = enchantedUnitPrice(inner, base) * mult * amount;
+            totalEarned += earned;
             totalItems += amount;
-            categoryEarnings.merge(cat, base * mult * amount, Double::sum);
+            categoryEarnings.merge(cat, earned, Double::sum);
         }
 
         return new ShulkerSellData(totalEarned, totalItems, categoryEarnings);

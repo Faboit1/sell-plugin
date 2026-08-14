@@ -21,6 +21,11 @@ public class SellMultiCommand implements CommandExecutor {
             return true;
         }
 
+        if (!plugin.getConfigManager().isProgressGuiEnabled()) {
+            player.sendMessage(plugin.getConfigManager().getText("feature-disabled", "&cThis feature is currently disabled."));
+            return true;
+        }
+
         if (!player.hasPermission("sellplugin.use")) {
             player.sendMessage(plugin.getConfigManager().getMessage("no-permission"));
             return true;

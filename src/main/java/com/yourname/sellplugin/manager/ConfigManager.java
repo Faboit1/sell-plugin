@@ -15,15 +15,40 @@ public class ConfigManager {
         this.plugin = plugin;
     }
 
-    // ---- Daily bonus ---------------------------------------------------------
-    /** Flat multiplier amount added to a boosted category's multiplier for the day. */
-    public double getDailyBonusAmount() {
-        return plugin.getConfig().getDouble("daily-bonus.bonus-amount", 0.4);
+    // ---- Feature toggles -----------------------------------------------------
+    /**
+     * Generic feature switch under the {@code features.<key>} section. Every
+     * major piece of the plugin can be turned off here without touching code.
+     */
+    public boolean isFeatureEnabled(String key, boolean def) {
+        return plugin.getConfig().getBoolean("features." + key, def);
     }
 
-    /** Number of categories to boost per day. */
-    public int getDailyBoostedCount() {
-        return plugin.getConfig().getInt("daily-bonus.boosted-count", 2);
+    public boolean isMultipliersEnabled()      { return isFeatureEnabled("multipliers", true); }
+    public boolean isEnchantmentPricingEnabled(){ return isFeatureEnabled("enchantment-pricing", true); }
+    public boolean isShulkerSellingEnabled()   { return isFeatureEnabled("shulker-selling", true); }
+    public boolean isProgressGuiEnabled()      { return isFeatureEnabled("progress-gui", true); }
+    public boolean isTopSellEnabled()          { return isFeatureEnabled("top-sell", true); }
+    public boolean isActionBarEnabled()        { return isFeatureEnabled("action-bar", true); }
+
+    // ---- Enchantment pricing -------------------------------------------------
+    /** Base value added per enchantment level for enchantments not explicitly listed. */
+    public double getEnchantDefaultValuePerLevel() {
+        return plugin.getConfig().getDouble("enchantments.default-value-per-level", 50.0);
+    }
+
+    /** Factor the price is multiplied by for each distinct enchantment on the item. */
+    public double getEnchantMultiplierPerEnchantment() {
+        return plugin.getConfig().getDouble("enchantments.multiplier-per-enchantment", 1.1);
+    }
+
+    /**
+     * Value added per level for a specific enchantment key (e.g. "sharpness"),
+     * falling back to {@link #getEnchantDefaultValuePerLevel()} when unlisted.
+     */
+    public double getEnchantValue(String enchantKey) {
+        return plugin.getConfig().getDouble("enchantments.values." + enchantKey,
+                getEnchantDefaultValuePerLevel());
     }
 
     // ---- Multiplier -------------------------------------------------------
@@ -89,8 +114,23 @@ public class ConfigManager {
         return plugin.getConfig().getBoolean("worth.enabled", true);
     }
 
+    /**
+     * Whether to inject the worth line for players in creative mode. Creative
+     * clients echo whatever lore they are shown back to the server, which bakes
+     * the line into the real item and causes duplicates — so this defaults to
+     * false. Only turn it on if you understand that trade-off.
+     */
+    public boolean isWorthShownInCreative() {
+        return plugin.getConfig().getBoolean("worth.show-in-creative", false);
+    }
+
     public String getWorthFormat() {
         return color(plugin.getConfig().getString("worth.format", "&7Worth &a&l${worth}"));
+    }
+
+    /** Config schema version, used by the auto-migrator. 0 = pre-versioning. */
+    public int getConfigVersion() {
+        return plugin.getConfig().getInt("config-version", 0);
     }
 
     // ---- SellAll GUI (simple /sellall GUI) --------------------------------

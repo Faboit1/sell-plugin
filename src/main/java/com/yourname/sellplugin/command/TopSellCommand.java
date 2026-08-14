@@ -22,6 +22,11 @@ public class TopSellCommand implements CommandExecutor {
             return true;
         }
 
+        if (!plugin.getConfigManager().isTopSellEnabled()) {
+            player.sendMessage(plugin.getConfigManager().getText("feature-disabled", "&cThis feature is currently disabled."));
+            return true;
+        }
+
         if (!player.hasPermission("sellplugin.topsell")) {
             player.sendMessage(plugin.getConfigManager().getMessage("no-permission"));
             return true;

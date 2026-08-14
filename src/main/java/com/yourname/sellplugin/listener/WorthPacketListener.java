@@ -16,6 +16,7 @@ import com.yourname.sellplugin.gui.SellAllGUI;
 import com.yourname.sellplugin.gui.ShopMainGUI;
 import com.yourname.sellplugin.gui.TopSellGUI;
 import com.yourname.sellplugin.util.NumberFormatter;
+import org.bukkit.GameMode;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
@@ -61,14 +62,44 @@ public class WorthPacketListener {
             public void onPacketSending(PacketEvent event) {
                 Player viewer = event.getPlayer();
                 if (viewer == null) return;
-                if (!WorthPacketListener.this.plugin.getWorthVisibilityManager()
-                        .isVisible(viewer.getUniqueId())) return;
-                if (!shouldDecorate(viewer)) return;
+                if (!worthAllowedFor(viewer)) return;
+
+                Inventory top = viewer.getOpenInventory().getTopInventory();
+                InventoryHolder holder = top.getHolder();
+                boolean pluginGui = isPluginGui(holder);
+                int topSize = top.getSize();
+
+                // Window id: 0 = the player's own inventory, negative = cursor /
+                // direct player-slot set, positive = an open container window.
+                int windowId = 0;
+                boolean windowKnown = false;
+                try {
+                    windowId = event.getPacket().getIntegers().read(0);
+                    windowKnown = true;
+                } catch (Exception ignored) {}
+                boolean ownInventory = windowKnown && windowId <= 0;
 
                 if (event.getPacketType() == PacketType.Play.Server.SET_SLOT) {
                     if (event.getPacket().getItemModifier().size() <= 0) return;
+
+                    boolean decorate;
+                    if (ownInventory) {
+                        // Player's own inventory / cursor item: always follow it,
+                        // even while a custom GUI is open, so a held item keeps its
+                        // worth line.
+                        decorate = true;
+                    } else if (pluginGui) {
+                        // Only the mirrored player-inventory portion of a plugin
+                        // GUI gets decorated; the GUI's own slots never do.
+                        int slot = readSetSlotIndex(event);
+                        decorate = slot >= topSize;
+                    } else {
+                        decorate = shouldDecorate(viewer);
+                    }
+                    if (!decorate) return;
+
                     ItemStack item = event.getPacket().getItemModifier().read(0);
-                    ItemStack updated = addWorthLore(event.getPlayer(), item);
+                    ItemStack updated = addWorthLore(viewer, item);
                     if (updated != item) {
                         event.getPacket().getItemModifier().write(0, updated);
                     }
@@ -79,12 +110,30 @@ public class WorthPacketListener {
                 List<ItemStack> items = event.getPacket().getItemListModifier().read(0);
                 if (items == null || items.isEmpty()) return;
 
+                // Index of the first slot in this packet that belongs to the
+                // player's own inventory (everything from here on is decorated).
+                int playerStart;
+                if (ownInventory) {
+                    playerStart = 0;
+                } else if (pluginGui) {
+                    playerStart = topSize;
+                } else if (shouldDecorate(viewer)) {
+                    playerStart = 0;
+                } else {
+                    return;
+                }
+
                 boolean changed = false;
                 List<ItemStack> updatedItems = new ArrayList<>(items.size());
-                for (ItemStack item : items) {
-                    ItemStack updated = addWorthLore(event.getPlayer(), item);
-                    updatedItems.add(updated);
-                    changed |= updated != item;
+                for (int i = 0; i < items.size(); i++) {
+                    ItemStack item = items.get(i);
+                    if (i >= playerStart) {
+                        ItemStack updated = addWorthLore(viewer, item);
+                        updatedItems.add(updated);
+                        changed |= updated != item;
+                    } else {
+                        updatedItems.add(item);
+                    }
                 }
 
                 if (changed) {
@@ -223,6 +272,36 @@ public class WorthPacketListener {
             if (!Character.isWhitespace(c)) return false;
         }
         return true;
+    }
+
+    /**
+     * Whether the worth line may be injected for this viewer at all. Respects the
+     * per-player visibility toggle and hides the line from creative-mode players
+     * (whose clients echo lore back to the server, baking it into real items)
+     * unless explicitly enabled via {@code worth.show-in-creative}.
+     */
+    private boolean worthAllowedFor(Player viewer) {
+        if (!plugin.getConfigManager().isWorthEnabled()) return false;
+        if (!plugin.getWorthVisibilityManager().isVisible(viewer.getUniqueId())) return false;
+        if (viewer.getGameMode() == GameMode.CREATIVE
+                && !plugin.getConfigManager().isWorthShownInCreative()) return false;
+        return true;
+    }
+
+    /** Reads the slot index from a SET_SLOT packet, or -1 if it can't be read. */
+    private int readSetSlotIndex(PacketEvent event) {
+        try {
+            if (event.getPacket().getShorts().size() > 0) {
+                return event.getPacket().getShorts().read(0);
+            }
+        } catch (Exception ignored) {}
+        try {
+            // Some mappings expose the slot as the 3rd integer (windowId, stateId, slot).
+            if (event.getPacket().getIntegers().size() > 2) {
+                return event.getPacket().getIntegers().read(2);
+            }
+        } catch (Exception ignored) {}
+        return -1;
     }
 
     private boolean shouldDecorate(Player player) {

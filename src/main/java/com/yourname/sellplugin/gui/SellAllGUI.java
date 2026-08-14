@@ -58,12 +58,8 @@ public class SellAllGUI implements InventoryHolder {
             if (raw.contains("{multipliers}")) {
                 for (String cat : categories) {
                     double m = plugin.getMultiplierManager().getEffectiveMultiplier(player, cat);
-                    double daily = plugin.getDailyBonusManager().getDailyBonus(cat);
-                    String suffix = daily > 0
-                            ? ChatColor.GOLD + " (\uD83D\uDD25 +" + String.format("%.2f", daily) + "x)"
-                            : "";
                     lore.add(ChatColor.translateAlternateColorCodes('&',
-                            "&e  \u25b6 &f" + cat + ": &a" + NumberFormatter.format(m) + "x" + suffix));
+                            "&e  \u25b6 &f" + cat + ": &a" + NumberFormatter.format(m) + "x"));
                 }
             } else {
                 lore.add(ChatColor.translateAlternateColorCodes('&', raw));

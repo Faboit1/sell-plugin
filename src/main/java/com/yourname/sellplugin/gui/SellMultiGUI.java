@@ -56,8 +56,7 @@ public class SellMultiGUI implements InventoryHolder {
         ConfigManager cfg = plugin.getConfigManager();
 
         double multiplier = plugin.getMultiplierManager().getMultiplier(player, catId);
-        double dailyBonus = plugin.getDailyBonusManager().getDailyBonus(catId);
-        double effective = multiplier + dailyBonus;
+        double effective = multiplier;
 
         String separator = cfg.getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
 
@@ -65,10 +64,6 @@ public class SellMultiGUI implements InventoryHolder {
         lore.add(separator);
         lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("sellmulti.earned-label", "earned: "))
                 + ChatColor.AQUA + String.format("%.2fx", multiplier));
-        if (dailyBonus > 0) {
-            lore.add(ChatColor.GOLD + " ▸ \uD83D\uDD25 " + SmallCaps.convert(cfg.getText("sellmulti.daily-boost-label", "daily boost: "))
-                    + ChatColor.YELLOW + "+" + String.format("%.2f", dailyBonus) + "x");
-        }
         lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("sellmulti.effective-label", "effective: "))
                 + ChatColor.GREEN + String.format("%.2fx", effective));
         lore.add(separator);

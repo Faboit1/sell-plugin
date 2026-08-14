@@ -2,6 +2,54 @@
 #                   SELL PLUGIN CONFIG                         #
 # ============================================================ #
 
+# Internal schema version. DO NOT edit this by hand – the plugin uses it to
+# auto-migrate old configs (adding any new options you're missing) and it makes
+# a timestamped backup of your old file first. If this key is missing the plugin
+# assumes an old config and migrates anyway.
+config-version: 1
+
+# ---- Feature toggles --------------------------------------- #
+# Turn any major part of the plugin on or off. Everything defaults to on.
+features:
+  # Category sell multipliers (earn more the more you sell in a category).
+  # When off, everything sells at a flat 1.0x.
+  multipliers: true
+  # Add extra value for enchantments (see the "enchantments" section below).
+  enchantment-pricing: true
+  # Allow selling the contents of shulker boxes.
+  shulker-selling: true
+  # The /sellmulti multiplier / progress-bar GUI.
+  progress-gui: true
+  # The /topsell leaderboard.
+  top-sell: true
+  # The "+$amount" action-bar pop-up shown after a sale.
+  action-bar: true
+
+# ---- Enchantment pricing ----------------------------------- #
+# When enchantment-pricing is enabled, an item's price is calculated as:
+#   (base price + sum of each enchantment's value × its level)
+#   × (multiplier-per-enchantment ^ number of distinct enchantments)
+# Example: a base $100 sword with Sharpness V and Unbreaking III, using the
+# defaults below (value 50/level, factor 1.1):
+#   added   = 50×5 + 50×3 = 400  →  base+added = 500
+#   factor  = 1.1 ^ 2 distinct enchants = 1.21
+#   price   = 500 × 1.21 = $605
+enchantments:
+  # Value added per enchantment level for any enchantment not listed below.
+  default-value-per-level: 50.0
+  # The price is multiplied by this for EACH distinct enchantment on the item.
+  multiplier-per-enchantment: 1.1
+  # Per-enchantment overrides. Keys are the vanilla enchantment ids (lowercase).
+  # Anything not listed uses default-value-per-level above.
+  values:
+    sharpness: 60.0
+    protection: 40.0
+    mending: 300.0
+    unbreaking: 30.0
+    efficiency: 40.0
+    fortune: 150.0
+    silk_touch: 200.0
+
 # Money required to unlock the first multiplier level (1.1x).
 # Each subsequent level costs (previous cost × multiplier).
 # e.g. start-multiplier: 1000, multiplier: 1.6
@@ -12,18 +60,11 @@ multiplier: 1.6
 # Maximum multiplier cap (used for progress bar display)
 max-multiplier: 3.0
 
-# ---- Daily Category Bonus ------------------------------------------ #
-# Every day a random selection of categories receive a flat bonus added
-# to the player's earned multiplier (not multiplied).
-# e.g. bonus-amount: 0.4 means fishing at 1.2x earns 1.6x that day.
-daily-bonus:
-  # How many categories get the daily boost (randomly chosen)
-  boosted-count: 2
-  # Flat amount added to the multiplier for boosted categories
-  bonus-amount: 0.4
-
-# ---- Progress bar (snake path) colours ------------------------------------ #
-# Must be valid glass-pane Material names.
+# ---- Progress bar (snake path) --------------------------------------------- #
+# The /sellmulti → category progress menu draws a "snake" of milestone nodes.
+# Each node is a block that changes appearance based on its state. Any valid
+# Material works here (glass panes, wool, concrete, ores, …) – customise freely.
+# The text on every node is fully customisable under messages.category-progress.
 progress-bar:
   completed-color: "LIME_STAINED_GLASS_PANE"
   inprogress-color: "YELLOW_STAINED_GLASS_PANE"
@@ -63,6 +104,11 @@ filler-block: "BLACK_STAINED_GLASS_PANE"
 worth:
   enabled: true
   format: "&7Worth &a&l${worth}"
+  # Show the worth line to players in CREATIVE mode?
+  # Leave this false. Creative clients echo item lore back to the server, which
+  # bakes the worth line into the real item and causes duplicate lines. Only
+  # enable if you fully understand that trade-off.
+  show-in-creative: false
 
 # ---- Main Shop GUI (/sell) ---------------------------------- #
 # This opens the 9x6 sell GUI where players place items to sell.
@@ -244,6 +290,8 @@ messages:
   sold-items: "&aYou sold &e{amount} &aitems for &e${price}&a!"
   nothing-to-sell: "&cYou have no sellable items in your inventory."
   economy-error: "&cAn economy error occurred. Please contact an admin."
+  # Shown when a player uses a command for a feature that's toggled off.
+  feature-disabled: "&cThis feature is currently disabled."
 
   # ── Commands / console messages ───────────────────────────────
   player-only-command: "&cOnly players can use this command."
@@ -276,7 +324,6 @@ messages:
   sellmulti:
     title: "&8&lMultipliers"
     earned-label: "earned: "
-    daily-boost-label: "daily boost: "
     effective-label: "effective: "
     click-to-view: "click to view progress"
 
@@ -292,10 +339,6 @@ messages:
 
   # ── Category Progress GUI (multiplier snake path) ─────────────
   category-progress:
-    daily-boost-title: "&6&l\uD83D\uDD25 Daily Boost Active!"
-    daily-boost-bonus-label: "bonus: "
-    daily-boost-effective-label: "effective: "
-    daily-boost-resets: "resets at midnight."
     back-lore: "return to the main menu."
     node-multiplier-suffix: "multiplier"
     node-status-label: "status: "

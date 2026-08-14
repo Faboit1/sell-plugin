@@ -87,6 +87,7 @@ public class MultiplierManager {
     //   The returned value is stepped: 1.0, 1.1, 1.2, … up to maxMultiplier.
     // -----------------------------------------------------------------------
     public double getMultiplier(Player p, String category) {
+        if (!plugin.getConfigManager().isMultipliersEnabled()) return 1.0;
         if (!cache.containsKey(p.getUniqueId())) loadPlayer(p.getUniqueId());
 
         double moneyEarned = cache.get(p.getUniqueId()).getOrDefault(category, 0.0);
@@ -111,15 +112,12 @@ public class MultiplierManager {
     }
 
     /**
-     * Returns the player's total effective multiplier for a category,
-     * which is the earned multiplier <em>plus</em> today's daily bonus (if any).
-     * Use this for all sell calculations and display.
+     * Returns the player's effective multiplier for a category. Kept as a
+     * distinct method (rather than inlining {@link #getMultiplier}) so callers
+     * don't need to change; the daily-bonus component was removed.
      */
     public double getEffectiveMultiplier(Player p, String category) {
-        double earned = getMultiplier(p, category);
-        DailyBonusManager dbm = plugin.getDailyBonusManager();
-        if (dbm == null) return earned;
-        return earned + dbm.getDailyBonus(category);
+        return getMultiplier(p, category);
     }
 
     /**

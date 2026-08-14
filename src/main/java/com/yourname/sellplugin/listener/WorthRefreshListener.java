@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 
@@ -37,6 +38,19 @@ public class WorthRefreshListener implements Listener {
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         if (event.getPlayer() instanceof Player player) {
+            refresh(player);
+        }
+    }
+
+    /**
+     * Picking an item onto the cursor and putting it back down are ordinary
+     * clicks; without a redraw the moved item (and the cursor item) come through
+     * bare. Re-sending the inventory the tick after any click keeps the worth
+     * line visible while items are held and replaced.
+     */
+    @EventHandler
+    public void onClick(InventoryClickEvent event) {
+        if (event.getWhoClicked() instanceof Player player) {
             refresh(player);
         }
     }

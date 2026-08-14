@@ -112,24 +112,7 @@ public class CategoryProgressGUI implements InventoryHolder {
         // ── Snake path ──────────────────────────────────────────────────────
         double mult = plugin.getMultiplierManager().getMultiplier(player, categoryId);
         double moneyEarned = plugin.getMultiplierManager().getMoneyEarned(player, categoryId);
-        double dailyBonus = plugin.getDailyBonusManager().getDailyBonus(categoryId);
         buildSnakePath(mult, moneyEarned);
-
-        // ── Daily bonus indicator (slot 4, top centre) ─────────────────────
-        if (dailyBonus > 0) {
-            String separator = cfg.getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
-            List<String> boostLore = new ArrayList<>();
-            boostLore.add(separator);
-            boostLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-progress.daily-boost-bonus-label", "bonus: "))
-                    + ChatColor.YELLOW + "+" + String.format("%.2f", dailyBonus) + "x");
-            boostLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-progress.daily-boost-effective-label", "effective: "))
-                    + ChatColor.GREEN + String.format("%.2fx", mult + dailyBonus));
-            boostLore.add(separator);
-            boostLore.add(ChatColor.GRAY + SmallCaps.convert(cfg.getText("category-progress.daily-boost-resets", "resets at midnight.")));
-            inv.setItem(4, makeItem(Material.BLAZE_POWDER,
-                    SmallCaps.convert(cfg.getText("category-progress.daily-boost-title", "&6&l\uD83D\uDD25 Daily Boost Active!")),
-                    boostLore));
-        }
 
         // ── Back button (bottom-right) ──────────────────────────────────────
         List<String> backLore = cfg.getIconLore("back",

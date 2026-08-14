@@ -210,7 +210,7 @@ public class WorthGUI implements InventoryHolder {
         if (itemKey.contains(":")) {
             String[] parts = itemKey.split(":", 2);
             Material mat = Material.matchMaterial(parts[0]);
-            if (mat == null) return new ItemStack(Material.BARRIER);
+            if (mat == null || mat.isAir() || !mat.isItem()) return new ItemStack(Material.BARRIER);
 
             ItemStack item = new ItemStack(mat);
             ItemMeta meta = item.getItemMeta();
@@ -224,7 +224,8 @@ public class WorthGUI implements InventoryHolder {
             return item;
         }
         Material mat = Material.matchMaterial(itemKey);
-        return new ItemStack(mat != null ? mat : Material.BARRIER);
+        if (mat == null || mat.isAir() || !mat.isItem()) return new ItemStack(Material.BARRIER);
+        return new ItemStack(mat);
     }
 
     /** Cycle to the next filter category. */

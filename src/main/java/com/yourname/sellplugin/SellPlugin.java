@@ -12,7 +12,7 @@ import com.yourname.sellplugin.gui.GUIListener;
 import com.yourname.sellplugin.listener.WorthPacketListener;
 import com.yourname.sellplugin.listener.WorthRefreshListener;
 import com.yourname.sellplugin.manager.ConfigManager;
-import com.yourname.sellplugin.manager.DailyBonusManager;
+import com.yourname.sellplugin.manager.ConfigMigrator;
 import com.yourname.sellplugin.manager.MultiplierManager;
 import com.yourname.sellplugin.manager.PriceManager;
 import com.yourname.sellplugin.manager.SellManager;
@@ -25,7 +25,6 @@ public class SellPlugin extends JavaPlugin {
     private ConfigManager configManager;
     private PriceManager priceManager;
     private MultiplierManager multiplierManager;
-    private DailyBonusManager dailyBonusManager;
     private SellManager sellManager;
     private WorthVisibilityManager worthVisibilityManager;
     private WorthPacketListener worthPacketListener;
@@ -33,13 +32,13 @@ public class SellPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        new ConfigMigrator(this).migrate();
         configManager = new ConfigManager(this);
 
         priceManager = new PriceManager(this);
         priceManager.loadPrices();
 
         multiplierManager = new MultiplierManager(this);
-        dailyBonusManager = new DailyBonusManager(this);
         sellManager = new SellManager(this);
         worthVisibilityManager = new WorthVisibilityManager(this);
 
@@ -86,7 +85,6 @@ public class SellPlugin extends JavaPlugin {
     public ConfigManager getConfigManager()    { return configManager; }
     public PriceManager getPriceManager()      { return priceManager; }
     public MultiplierManager getMultiplierManager() { return multiplierManager; }
-    public DailyBonusManager getDailyBonusManager() { return dailyBonusManager; }
     public SellManager getSellManager()        { return sellManager; }
     public WorthVisibilityManager getWorthVisibilityManager() { return worthVisibilityManager; }
 }

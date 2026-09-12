@@ -9,7 +9,7 @@ commands:
   sell:
     description: Opens the sell GUI where you can place items to sell.
     usage: /sell [reload]
-    aliases: [sellmenu, sellgui, shop]
+    aliases: [sellmenu, sellgui]
     permission: sellplugin.use
   sellmulti:
     description: Opens the multiplier overview GUI.

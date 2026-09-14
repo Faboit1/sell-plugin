@@ -12,7 +12,6 @@ import com.yourname.sellplugin.gui.CategoryItemsGUI;
 import com.yourname.sellplugin.gui.CategoryProgressGUI;
 import com.yourname.sellplugin.gui.ConfirmSellAllGUI;
 import com.yourname.sellplugin.gui.ConfirmSellGUI;
-import com.yourname.sellplugin.gui.SellAllGUI;
 import com.yourname.sellplugin.gui.ShopMainGUI;
 import com.yourname.sellplugin.gui.TopSellGUI;
 import com.yourname.sellplugin.manager.SellManager;
@@ -337,7 +336,6 @@ public class WorthPacketListener {
         return holder instanceof ShopMainGUI
                 || holder instanceof CategoryProgressGUI
                 || holder instanceof CategoryItemsGUI
-                || holder instanceof SellAllGUI
                 || holder instanceof ConfirmSellGUI
                 || holder instanceof ConfirmSellAllGUI
                 || holder instanceof TopSellGUI;

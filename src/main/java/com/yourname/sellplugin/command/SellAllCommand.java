@@ -1,7 +1,7 @@
 package com.yourname.sellplugin.command;
 
 import com.yourname.sellplugin.SellPlugin;
-import com.yourname.sellplugin.gui.SellAllGUI;
+import com.yourname.sellplugin.gui.ConfirmSellAllGUI;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -26,7 +26,7 @@ public class SellAllCommand implements CommandExecutor {
             return true;
         }
 
-        new SellAllGUI(plugin, player).open(player);
+        new ConfirmSellAllGUI(plugin, player).open(player);
         return true;
     }
 }

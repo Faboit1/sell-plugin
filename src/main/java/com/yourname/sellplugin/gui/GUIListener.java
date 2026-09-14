@@ -53,7 +53,6 @@ public class GUIListener implements Listener {
         // All other plugin GUIs: cancel drags entirely.
         if (holder instanceof CategoryProgressGUI
                 || holder instanceof CategoryItemsGUI
-                || holder instanceof SellAllGUI
                 || holder instanceof ConfirmSellGUI
                 || holder instanceof ConfirmSellAllGUI
                 || holder instanceof TopSellGUI
@@ -234,18 +233,6 @@ public class GUIListener implements Listener {
             return;
         }
 
-        // ── SellAllGUI ───────────────────────────────────────────────────────
-        if (holder instanceof SellAllGUI sellAllGUI) {
-            e.setCancelled(true);
-            if (e.getClickedInventory() == null
-                    || !(e.getClickedInventory().getHolder() instanceof SellAllGUI)) return;
-
-            if (e.getSlot() == sellAllGUI.getSellAllSlot()) {
-                new ConfirmSellAllGUI(plugin, player).open(player);
-            }
-        }
-
-        // ── ConfirmSellAllGUI ─────────────────────────────────────────────────
         if (holder instanceof ConfirmSellAllGUI) {
             e.setCancelled(true);
             if (e.getClickedInventory() == null
@@ -260,8 +247,9 @@ public class GUIListener implements Listener {
             }
 
             if (slot == ConfirmSellAllGUI.SLOT_CANCEL) {
+                // /sellall opens this menu directly, so there is nothing behind
+                // it to go back to.
                 player.closeInventory();
-                new SellAllGUI(plugin, player).open(player);
             }
         }
 

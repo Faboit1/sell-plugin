@@ -4,9 +4,8 @@ import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.SellManager;
 import com.yourname.sellplugin.util.NumberFormatter;
-import com.yourname.sellplugin.util.SmallCaps;
+import com.yourname.sellplugin.util.Text;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -20,7 +19,7 @@ import java.util.List;
 
 /**
  * Confirm/Cancel GUI for selling all items in a category.
- * 27-slot (3 rows) GUI with Confirm (green) and Cancel (red) buttons.
+ * 27-slot (3 rows) GUI with Confirm and Cancel buttons.
  */
 public class ConfirmSellGUI implements InventoryHolder {
 
@@ -28,6 +27,24 @@ public class ConfirmSellGUI implements InventoryHolder {
 
     public static final int SLOT_CONFIRM = 11;
     public static final int SLOT_CANCEL = 15;
+    public static final int SLOT_INFO = 13;
+
+    // Shipped defaults, used only when a config key has been deleted outright.
+    private static final String DEFAULT_TITLE = "<dark_gray><bold>Sell your {category}";
+    private static final List<String> DEFAULT_INFO_LORE = List.of(
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━",
+            "<gray> ▸ Items: <white>{items}",
+            "<gray> ▸ Value: <green>{marker}${value}",
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+    );
+    private static final List<String> DEFAULT_CONFIRM_LORE = List.of(
+            "<gray> ▸ Sell all {category}<gray> items",
+            "<gray> ▸ from your inventory.",
+            "<green> ▸ You will earn: {marker}${value}"
+    );
+    private static final List<String> DEFAULT_CANCEL_LORE = List.of(
+            "<gray> ▸ Go back without selling."
+    );
 
     private final Inventory inv;
     private final SellPlugin plugin;
@@ -40,9 +57,9 @@ public class ConfirmSellGUI implements InventoryHolder {
         this.returnPage = returnPage;
 
         ConfigManager cfg = plugin.getConfigManager();
-        String title = ChatColor.DARK_GRAY + "" + ChatColor.BOLD
-                + SmallCaps.convert(cfg.getText("confirm-sell.title-prefix", "sell your "))
-                + cfg.getCategoryDisplayName(categoryId);
+        String title = Text.legacy(Text.fill(
+                cfg.getRawText("confirm-sell.title", DEFAULT_TITLE),
+                "category", cfg.getRawCategoryDisplayName(categoryId)));
         this.inv = Bukkit.createInventory(this, SIZE, title);
         populate(player);
     }
@@ -50,51 +67,46 @@ public class ConfirmSellGUI implements InventoryHolder {
     private void populate(Player player) {
         ConfigManager cfg = plugin.getConfigManager();
 
-        // Fill with configurable filler block
-        Material fillerMat = cfg.getFillerBlock();
-        ItemStack bg = makeItem(fillerMat, " ", Collections.emptyList());
+        ItemStack bg = makeItem(cfg.getFillerBlock(), " ", Collections.emptyList());
         for (int i = 0; i < SIZE; i++) inv.setItem(i, bg);
 
-        // Category info in centre (slot 13)
         SellManager.SellPreview preview = plugin.getSellManager().previewCategory(player, categoryId);
-        double value = preview.value;
         int itemCount = plugin.getSellManager().countCategoryItems(player, categoryId);
         // Marks the figure as an estimate when open orders make up part of it.
         String marker = preview.includesOrders ? cfg.getOrderEstimateMarker() : "";
+        Object[] placeholders = {
+                "category", cfg.getRawCategoryDisplayName(categoryId),
+                "items", NumberFormatter.format(itemCount),
+                "value", NumberFormatter.format(preview.value),
+                "marker", marker
+        };
 
-        String separator = cfg.getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
-        List<String> infoLore = new ArrayList<>();
-        infoLore.add(separator);
-        infoLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell.items-label", "items: "))
-                + ChatColor.WHITE + NumberFormatter.format(itemCount));
-        infoLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell.value-label", "value: "))
-                + ChatColor.GREEN + marker + "$" + NumberFormatter.format(value));
-        infoLore.add(separator);
+        inv.setItem(SLOT_INFO, makeItem(
+                cfg.getCategoryMaterial(categoryId),
+                cfg.getCategoryDisplayName(categoryId),
+                render(cfg.getRawTextList("confirm-sell.info-lore", DEFAULT_INFO_LORE), placeholders)));
 
-        inv.setItem(13, makeItem(cfg.getCategoryMaterial(categoryId),
-                cfg.getCategoryDisplayName(categoryId), infoLore));
-
-        // Confirm button
-        List<String> confirmLore = new ArrayList<>();
-        confirmLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell.confirm-lore-line1", "sell all "))
-                + cfg.getCategoryDisplayName(categoryId)
-                + ChatColor.GRAY + SmallCaps.convert(cfg.getText("confirm-sell.confirm-lore-line2", " items")));
-        confirmLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell.confirm-lore-line3", "from your inventory.")));
-        if (itemCount > 0) {
-            confirmLore.add(ChatColor.GREEN + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell.confirm-earn", "you will earn: $")) + marker + NumberFormatter.format(value));
+        // The "you will earn" line only makes sense with something to sell, so
+        // any line mentioning the value drops out of an empty confirmation.
+        List<String> confirmLore = cfg.getRawTextList("confirm-sell.confirm-lore", DEFAULT_CONFIRM_LORE);
+        if (itemCount <= 0) {
+            confirmLore = confirmLore.stream().filter(line -> !Text.mentions(line, "value")).toList();
         }
         inv.setItem(SLOT_CONFIRM, makeItem(
                 cfg.getIconMaterial("confirm", Material.LIME_STAINED_GLASS_PANE),
-                cfg.getIconName("confirm", "&a&l" + SmallCaps.convert("confirm")),
-                confirmLore));
+                cfg.getIconName("confirm", "<green><bold>Confirm"),
+                render(confirmLore, placeholders)));
 
-        // Cancel button
-        List<String> cancelLore = cfg.getIconLore("cancel",
-                Collections.singletonList(ChatColor.GRAY + SmallCaps.convert(cfg.getText("confirm-sell.cancel-lore", "go back without selling."))));
         inv.setItem(SLOT_CANCEL, makeItem(
                 cfg.getIconMaterial("cancel", Material.RED_STAINED_GLASS_PANE),
-                cfg.getIconName("cancel", "&c&l" + SmallCaps.convert("cancel")),
-                cancelLore));
+                cfg.getIconName("cancel", "<red><bold>Cancel"),
+                render(cfg.getRawTextList("confirm-sell.cancel-lore", DEFAULT_CANCEL_LORE), placeholders)));
+    }
+
+    private List<String> render(List<String> template, Object... placeholders) {
+        List<String> lore = new ArrayList<>(template.size());
+        for (String line : template) lore.add(Text.legacy(Text.fill(line, placeholders)));
+        return lore;
     }
 
     private ItemStack makeItem(Material mat, String name, List<String> lore) {

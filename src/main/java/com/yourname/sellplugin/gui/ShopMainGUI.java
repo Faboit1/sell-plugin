@@ -5,9 +5,8 @@ import com.yourname.sellplugin.integration.OrderQuoteLedger;
 import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.SellManager;
 import com.yourname.sellplugin.util.NumberFormatter;
-import com.yourname.sellplugin.util.SmallCaps;
+import com.yourname.sellplugin.util.Text;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -40,6 +39,22 @@ public class ShopMainGUI implements InventoryHolder {
     /** Number of item placement slots (rows 0-4). */
     public static final int ITEM_AREA_END = 45;
 
+    // Shipped defaults, used only when a config key has been deleted outright.
+    private static final String DEFAULT_TITLE = "<dark_gray><bold>Put items here to sell";
+    private static final String DEFAULT_BUTTON_NAME = "<green><bold>Sell";
+    private static final List<String> DEFAULT_VALUE_LORE = List.of(
+            "<dark_gray>\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
+            "<gray> \u25b8 Value: <green>{marker}${value}",
+            "<dark_gray>\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
+            "<yellow> \u2726 Click to sell all items!"
+    );
+    private static final List<String> DEFAULT_EMPTY_LORE = List.of(
+            "<dark_gray>\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
+            "<gray> \u25b8 No sellable items",
+            "<dark_gray>\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
+            "<yellow> \u2726 Click to sell all items!"
+    );
+
     private final Inventory inv;
     private final SellPlugin plugin;
     private final Player player;
@@ -47,9 +62,7 @@ public class ShopMainGUI implements InventoryHolder {
     public ShopMainGUI(SellPlugin plugin, Player player) {
         this.plugin = plugin;
         this.player = player;
-        // Title in small caps (configurable via messages.shop.title)
-        String title = ChatColor.DARK_GRAY + "" + ChatColor.BOLD
-                + SmallCaps.convert(plugin.getConfigManager().getText("shop.title", "put items here to sell"));
+        String title = plugin.getConfigManager().getText("shop.title", DEFAULT_TITLE);
         this.inv = Bukkit.createInventory(this, SIZE, title);
         populate();
     }
@@ -76,6 +89,14 @@ public class ShopMainGUI implements InventoryHolder {
         inv.setItem(SLOT_SELL_BUTTON, buildSellButton());
     }
 
+    /**
+     * The Sell button, whose every line comes from config.
+     *
+     * <p>Two lore lists are kept rather than one with conditional lines: what a
+     * server wants to say about an empty GUI rarely resembles what it says
+     * about a full one, and a single list would have meant inventing rules
+     * about which lines to hide.
+     */
     private ItemStack buildSellButton() {
         ConfigManager cfg = plugin.getConfigManager();
 
@@ -83,25 +104,24 @@ public class ShopMainGUI implements InventoryHolder {
         // the button agrees with what clicking it pays out.
         SellManager.SaleTally tally = valueGuiItems();
         double totalValue = tally.totalEarned();
-        String marker = tally.usedOrders() ? cfg.getOrderEstimateMarker() : "";
+        boolean empty = totalValue <= 0;
 
-        String separator = cfg.getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
+        List<String> template = empty
+                ? cfg.getRawTextList("shop.sell-button-lore-empty", DEFAULT_EMPTY_LORE)
+                : cfg.getRawTextList("shop.sell-button-lore", DEFAULT_VALUE_LORE);
 
-        List<String> lore = new ArrayList<>();
-        lore.add(separator);
-        if (totalValue > 0) {
-            lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("shop.sell-value-label", "value: "))
-                    + ChatColor.GREEN + marker + "$" + NumberFormatter.format(totalValue));
-        } else {
-            lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("shop.sell-empty", "no sellable items")));
+        List<String> lore = new ArrayList<>(template.size());
+        for (String line : template) {
+            lore.add(Text.legacy(Text.fill(line,
+                    "value", NumberFormatter.format(totalValue),
+                    "marker", tally.usedOrders() ? cfg.getOrderEstimateMarker() : "",
+                    "items", NumberFormatter.format(tally.items))));
         }
-        lore.add(separator);
-        lore.add(ChatColor.YELLOW + " ✦ " + SmallCaps.convert(cfg.getText("shop.sell-click", "click to sell all items!")));
 
-        String sellButtonName = cfg.getText("shop.sell-button-name", "&a&lSell");
-
-        Material sellMat = cfg.getIconMaterial("sell-button", Material.LIME_STAINED_GLASS_PANE);
-        return makeItem(sellMat, sellButtonName, lore);
+        return makeItem(
+                cfg.getIconMaterial("sell-button", Material.LIME_STAINED_GLASS_PANE),
+                cfg.getText("shop.sell-button-name", DEFAULT_BUTTON_NAME),
+                lore);
     }
 
     /**

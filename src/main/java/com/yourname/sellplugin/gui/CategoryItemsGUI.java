@@ -6,9 +6,8 @@ import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.PriceManager;
 import com.yourname.sellplugin.util.ItemNameFormatter;
 import com.yourname.sellplugin.util.NumberFormatter;
-import com.yourname.sellplugin.util.SmallCaps;
+import com.yourname.sellplugin.util.Text;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -43,6 +42,24 @@ public class CategoryItemsGUI implements InventoryHolder {
     public static final int SLOT_NEXT     = 50;
     public static final int SLOT_SELL_ALL = 53;
 
+    // Shipped defaults, used only when a config key has been deleted outright.
+    private static final List<String> DEFAULT_SELL_LORE = List.of(
+            "<gray> ▸ Category: {category}",
+            "<gray> ▸ Items: <white>{items}",
+            "<gray> ▸ Earn: <green>{marker}${value}"
+    );
+    private static final List<String> DEFAULT_SELL_LORE_EMPTY = List.of(
+            "<gray> ▸ Category: {category}",
+            "<red> ▸ No items to sell."
+    );
+    private static final List<String> DEFAULT_ITEM_LORE = List.of(
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━━━",
+            "<gray> ▸ <white>Base:  <green>${base}",
+            "<gray> ▸ <white>Mult:  <aqua>{multiplier}x",
+            "<gray> ▸ <white>Price: <green>${price}",
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━━━"
+    );
+
     private final Inventory inv;
     private final SellPlugin plugin;
     private final Player player;
@@ -60,8 +77,9 @@ public class CategoryItemsGUI implements InventoryHolder {
         this.itemKeys = buildItemKeyList();
 
         ConfigManager cfg = plugin.getConfigManager();
-        String title = cfg.getCategoryDisplayName(categoryId)
-                + cfg.getText("category-items.title-suffix", "&8 – Items");
+        String title = Text.legacy(Text.fill(
+                cfg.getRawText("category-items.title", "{category}<dark_gray> – Items"),
+                "category", cfg.getRawCategoryDisplayName(categoryId)));
         this.inv = Bukkit.createInventory(this, 54, title);
         populate();
     }
@@ -102,42 +120,39 @@ public class CategoryItemsGUI implements InventoryHolder {
         for (int i = (end - start); i < 45; i++) inv.setItem(i, filler);
 
         // ── Back button ────────────────────────────────────────────────────
-        List<String> backLore = cfg.getIconLore("back",
-                Collections.singletonList(ChatColor.GRAY + "Return to category view."));
+        List<String> backLore = cfg.getIconLore("back", List.of("<gray>Return to category view."));
         inv.setItem(SLOT_BACK, makeItem(
                 cfg.getIconMaterial("back", Material.ARROW),
-                cfg.getIconName("back", "&c&lBack"),
+                cfg.getIconName("back", "<red><bold>Back"),
                 backLore));
 
         // ── Previous page ──────────────────────────────────────────────────
         if (page > 0) {
-            List<String> prevLore = cfg.getIconLore("prev-page",
-                    Collections.singletonList(ChatColor.GRAY + "Previous page."));
+            List<String> prevLore = cfg.getIconLore("prev-page", List.of("<gray>Previous page."));
             inv.setItem(SLOT_PREV, makeItem(
                     cfg.getIconMaterial("prev-page", Material.ARROW),
-                    cfg.getIconName("prev-page", "&e← Previous"),
+                    cfg.getIconName("prev-page", "<yellow>← Previous"),
                     prevLore));
         }
 
         // ── Page indicator ─────────────────────────────────────────────────
         int totalPages = Math.max(1, (int) Math.ceil((double) itemKeys.size() / ITEMS_PER_PAGE));
         List<String> infoLore = Collections.singletonList(
-                cfg.getText("category-items.total-items", "&7Total items: {count}")
+                cfg.getText("category-items.total-items", "<gray>Total items: {count}")
                         .replace("{count}", String.valueOf(itemKeys.size())));
         inv.setItem(SLOT_INFO, makeItem(
                 cfg.getIconMaterial("page-indicator", Material.PAPER),
-                cfg.getText("category-items.page-indicator", "&fPage {page} / {total}")
+                cfg.getText("category-items.page-indicator", "<white>Page {page} / {total}")
                         .replace("{page}", String.valueOf(page + 1))
                         .replace("{total}", String.valueOf(totalPages)),
                 infoLore));
 
         // ── Next page ──────────────────────────────────────────────────────
         if ((page + 1) * ITEMS_PER_PAGE < itemKeys.size()) {
-            List<String> nextLore = cfg.getIconLore("next-page",
-                    Collections.singletonList(ChatColor.GRAY + "Next page."));
+            List<String> nextLore = cfg.getIconLore("next-page", List.of("<gray>Next page."));
             inv.setItem(SLOT_NEXT, makeItem(
                     cfg.getIconMaterial("next-page", Material.ARROW),
-                    cfg.getIconName("next-page", "&eNext →"),
+                    cfg.getIconName("next-page", "<yellow>Next →"),
                     nextLore));
         }
 
@@ -147,20 +162,20 @@ public class CategoryItemsGUI implements InventoryHolder {
         int catCount    = plugin.getSellManager().countCategoryItems(player, categoryId);
         // Marks the figure as an estimate when open orders make up part of it.
         String catMarker = catPreview.includesOrders ? cfg.getOrderEstimateMarker() : "";
-        List<String> sellLore = new ArrayList<>();
-        sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-items.category-label", "category: "))
-                + ChatColor.WHITE + ChatColor.stripColor(cfg.getCategoryDisplayName(categoryId)));
-        if (catCount > 0) {
-            sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-items.items-label", "items: "))
-                    + ChatColor.WHITE + NumberFormatter.format(catCount));
-            sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-items.earn-label", "earn: "))
-                    + ChatColor.GREEN + catMarker + "$" + NumberFormatter.format(catValue));
-        } else {
-            sellLore.add(ChatColor.RED + " ▸ " + SmallCaps.convert(cfg.getText("category-items.no-items-to-sell", "no items to sell.")));
+        List<String> template = catCount > 0
+                ? cfg.getRawTextList("category-items.sell-lore", DEFAULT_SELL_LORE)
+                : cfg.getRawTextList("category-items.sell-lore-empty", DEFAULT_SELL_LORE_EMPTY);
+        List<String> sellLore = new ArrayList<>(template.size());
+        for (String line : template) {
+            sellLore.add(Text.legacy(Text.fill(line,
+                    "category", cfg.getRawCategoryDisplayName(categoryId),
+                    "items", NumberFormatter.format(catCount),
+                    "value", NumberFormatter.format(catValue),
+                    "marker", catMarker)));
         }
         inv.setItem(SLOT_SELL_ALL, makeItem(
                 cfg.getIconMaterial("sell-category", Material.GOLD_INGOT),
-                cfg.getIconName("sell-category", "&a&lSell Category"),
+                cfg.getIconName("sell-category", "<green><bold>Sell Category"),
                 sellLore));
     }
 
@@ -177,16 +192,17 @@ public class CategoryItemsGUI implements InventoryHolder {
         ItemStack item = resolveItemStack(itemKey);
 
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━");
-        lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Base:  "
-                + ChatColor.GREEN + "$" + NumberFormatter.format(base));
-        lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Mult:  "
-                + ChatColor.AQUA + String.format("%.2fx", effectiveMultiplier));
-        lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Price: "
-                + ChatColor.GREEN + "$" + NumberFormatter.format(effective));
-        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━");
+        for (String line : plugin.getConfigManager().getRawTextList("category-items.item-lore", DEFAULT_ITEM_LORE)) {
+            lore.add(Text.legacy(Text.fill(line,
+                    "item", ItemNameFormatter.formatKey(itemKey),
+                    "base", NumberFormatter.format(base),
+                    "multiplier", String.format("%.2f", effectiveMultiplier),
+                    "price", NumberFormatter.format(effective))));
+        }
 
-        String displayName = ChatColor.WHITE + ItemNameFormatter.formatKey(itemKey);
+        String displayName = Text.legacy(Text.fill(
+                plugin.getConfigManager().getRawText("category-items.item-name", "<white>{item}"),
+                "item", ItemNameFormatter.formatKey(itemKey)));
 
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {

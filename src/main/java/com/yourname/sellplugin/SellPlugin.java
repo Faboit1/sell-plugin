@@ -7,6 +7,7 @@ import com.yourname.sellplugin.command.FastSellAllCommand;
 import com.yourname.sellplugin.command.ShowWorthCommand;
 import com.yourname.sellplugin.command.TopSellCommand;
 import com.yourname.sellplugin.command.WorthCommand;
+import com.yourname.sellplugin.dialog.WorthDialogService;
 import com.yourname.sellplugin.economy.EconomyManager;
 import com.yourname.sellplugin.gui.GUIListener;
 import com.yourname.sellplugin.integration.OrderIntegration;
@@ -31,6 +32,7 @@ public class SellPlugin extends JavaPlugin {
     private WorthVisibilityManager worthVisibilityManager;
     private WorthPacketListener worthPacketListener;
     private OrderIntegration orderIntegration;
+    private WorthDialogService worthDialogService;
 
     @Override
     public void onEnable() {
@@ -44,6 +46,11 @@ public class SellPlugin extends JavaPlugin {
         multiplierManager = new MultiplierManager(this);
         sellManager = new SellManager(this);
         worthVisibilityManager = new WorthVisibilityManager(this);
+
+        worthDialogService = new WorthDialogService(this);
+        if (!WorthDialogService.isSupported()) {
+            getLogger().info("This server predates Minecraft 1.21.6, so item prices open as a menu rather than a dialog.");
+        }
 
         economyManager = new EconomyManager(this);
         if (!economyManager.setupEconomy()) {
@@ -104,4 +111,5 @@ public class SellPlugin extends JavaPlugin {
     public SellManager getSellManager()        { return sellManager; }
     public WorthVisibilityManager getWorthVisibilityManager() { return worthVisibilityManager; }
     public OrderIntegration getOrderIntegration() { return orderIntegration; }
+    public WorthDialogService getWorthDialogService() { return worthDialogService; }
 }

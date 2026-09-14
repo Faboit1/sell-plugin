@@ -1,7 +1,7 @@
 package com.yourname.sellplugin.manager;
 
 import com.yourname.sellplugin.SellPlugin;
-import org.bukkit.ChatColor;
+import com.yourname.sellplugin.util.Text;
 import org.bukkit.Material;
 
 import java.util.ArrayList;
@@ -94,15 +94,6 @@ public class ConfigManager {
         return mat != null ? mat : fallback;
     }
 
-    // ---- GUI (main shop menu) ---------------------------------------------
-    public String getGuiTitle() {
-        return color(plugin.getConfig().getString("gui.title", "&8&lShop"));
-    }
-
-    public int getGuiSize() {
-        return plugin.getConfig().getInt("gui.size", 45);
-    }
-
     // ---- Filler block -----------------------------------------------------
     public Material getFillerBlock() {
         String matName = plugin.getConfig().getString("filler-block", "BLACK_STAINED_GLASS_PANE");
@@ -179,30 +170,9 @@ public class ConfigManager {
         return plugin.getConfig().getInt("config-version", 0);
     }
 
-    // ---- SellAll GUI (simple /sellall GUI) --------------------------------
-    public String getSellAllGuiTitle() {
-        return color(plugin.getConfig().getString("sell-all-gui.title", "&8&lSell All Items"));
-    }
 
-    public int getSellAllGuiSize() {
-        return plugin.getConfig().getInt("sell-all-gui.size", 27);
-    }
 
-    public int getSellAllSlot() {
-        return plugin.getConfig().getInt("sell-all-gui.slot", 13);
-    }
 
-    public String getSellAllMaterial() {
-        return plugin.getConfig().getString("sell-all-gui.item", "EMERALD_BLOCK");
-    }
-
-    public String getSellAllName() {
-        return color(plugin.getConfig().getString("sell-all-gui.name", "&a&lSell All"));
-    }
-
-    public List<String> getSellAllLore() {
-        return plugin.getConfig().getStringList("sell-all-gui.lore");
-    }
 
     // ---- Prefix / sounds --------------------------------------------------
     public boolean isPrefixEnabled() {
@@ -242,9 +212,14 @@ public class ConfigManager {
     }
 
     public String getCategoryDisplayName(String categoryId) {
+        return color(getRawCategoryDisplayName(categoryId));
+    }
+
+    /** The category's display name as written, for substituting into another line. */
+    public String getRawCategoryDisplayName(String categoryId) {
         String path = "categories." + categoryId + ".display-name";
-        String def = "&f" + capitalize(categoryId);
-        return color(plugin.getConfig().getString(path, def));
+        String def = "<white>" + capitalize(categoryId);
+        return plugin.getConfig().getString(path, def);
     }
 
     public Material getCategoryMaterial(String categoryId) {
@@ -276,7 +251,16 @@ public class ConfigManager {
      * Used for all customisable GUI/command text that isn't a chat "message".
      */
     public String getText(String path, String def) {
-        return color(plugin.getConfig().getString("messages." + path, def));
+        return color(getRawText(path, def));
+    }
+
+    /**
+     * The configured string as written, before MiniMessage is parsed. Callers
+     * that substitute placeholders need this, so a value carrying its own
+     * formatting is parsed along with the line it lands in.
+     */
+    public String getRawText(String path, String def) {
+        return plugin.getConfig().getString("messages." + path, def);
     }
 
     // ---- Icons ----------------------------------------------------------------
@@ -309,10 +293,9 @@ public class ConfigManager {
      */
     public List<String> getIconLore(String key, List<String> defaultLore) {
         List<String> raw = plugin.getConfig().getStringList("icons." + key + ".lore");
-        if (raw.isEmpty()) return defaultLore;
-        List<String> result = new ArrayList<>();
-        for (String line : raw) result.add(color(line));
-        return result;
+        // The fallback is written in MiniMessage like everything else, so it
+        // has to be rendered too rather than handed back as written.
+        return Text.legacyLines(raw.isEmpty() ? defaultLore : raw);
     }
 
     // ---- Reload -----------------------------------------------------------
@@ -322,9 +305,19 @@ public class ConfigManager {
     }
 
     // ---- Helpers ----------------------------------------------------------
+    /**
+     * Renders a configured string. The plugin adds no colour, boldness or
+     * letter-casing of its own any more - whatever a line looks like is what
+     * the config says, written in MiniMessage (legacy {@code &} codes still work).
+     */
     public String color(String s) {
-        if (s == null) return "";
-        return ChatColor.translateAlternateColorCodes('&', s);
+        return Text.legacy(s);
+    }
+
+    /** The raw, unrendered lines of a configured list, for callers filling in placeholders. */
+    public List<String> getRawTextList(String path, List<String> def) {
+        List<String> raw = plugin.getConfig().getStringList("messages." + path);
+        return raw.isEmpty() ? (def == null ? List.of() : def) : raw;
     }
 
     private String capitalize(String s) {

@@ -14,6 +14,7 @@ import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Automatically brings an existing {@code config.yml} up to date whenever the
@@ -34,11 +35,82 @@ import java.util.List;
 public class ConfigMigrator {
 
     /** Bump this whenever the bundled config.yml gains or drops options. */
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
 
     /** Keys that used to exist but have been removed from the plugin. */
     private static final List<String> OBSOLETE_KEYS = List.of(
-            "daily-bonus"
+            "daily-bonus",
+            // The one-button /sellall menu is gone; /sellall opens the
+            // confirmation directly now.
+            "sell-all-gui",
+            // Menu titles moved under messages.* along with everything else.
+            "gui",
+            "sell-multi-gui",
+            "worth-gui",
+            // Lore is written a whole line at a time now, so the fragments
+            // these keys held no longer have anywhere to go.
+            "messages.shop.sell-value-label",
+            "messages.shop.sell-empty",
+            "messages.shop.sell-click",
+            "messages.sellmulti.earned-label",
+            "messages.sellmulti.effective-label",
+            "messages.sellmulti.click-to-view",
+            "messages.category-items.title-suffix",
+            "messages.category-items.category-label",
+            "messages.category-items.items-label",
+            "messages.category-items.earn-label",
+            "messages.category-items.no-items-to-sell",
+            "messages.category-progress.back-lore",
+            "messages.category-progress.node-multiplier-suffix",
+            "messages.category-progress.node-status-label",
+            "messages.category-progress.node-status-completed",
+            "messages.category-progress.node-status-in-progress",
+            "messages.category-progress.node-status-locked",
+            "messages.category-progress.node-click-to-view",
+            "messages.category-progress.node-earned-label",
+            "messages.category-progress.node-required-label",
+            "messages.category-progress.node-progress-label",
+            "messages.category-progress.node-need-label",
+            "messages.category-progress.node-need-suffix",
+            "messages.confirm-sell.title-prefix",
+            "messages.confirm-sell.items-label",
+            "messages.confirm-sell.value-label",
+            "messages.confirm-sell.confirm-lore-line1",
+            "messages.confirm-sell.confirm-lore-line2",
+            "messages.confirm-sell.confirm-lore-line3",
+            "messages.confirm-sell.confirm-earn",
+            "messages.confirm-sell-all.items-label",
+            "messages.confirm-sell-all.value-label",
+            "messages.confirm-sell-all.confirm-earn",
+            "messages.top-sell.total-earned-label"
+    );
+
+    /**
+     * Text the plugin used to ship, paired with the key that held it.
+     *
+     * <p>Small caps and boldness used to be applied in code, so these values
+     * were written as bare lowercase and only looked right once the plugin had
+     * decorated them. Now that nothing is decorated, a value left at one of
+     * these is cleared so the new MiniMessage default takes its place. A value
+     * somebody actually chose does not match, and is kept untouched.
+     */
+    private static final Map<String, String> SUPERSEDED_DEFAULTS = Map.ofEntries(
+            Map.entry("messages.shop.title", "put items here to sell"),
+            Map.entry("messages.shop.sell-button-name", "&a&lSell"),
+            Map.entry("messages.sellmulti.title", "&8&lMultipliers"),
+            Map.entry("messages.category-items.total-items", "&7Total items: {count}"),
+            Map.entry("messages.category-items.page-indicator", "&fPage {page} / {total}"),
+            Map.entry("messages.confirm-sell-all.title", "confirm sell all"),
+            Map.entry("messages.confirm-sell.cancel-lore", "go back without selling."),
+            Map.entry("messages.confirm-sell-all.cancel-lore", "go back without selling."),
+            Map.entry("messages.top-sell.title", "top sellers"),
+            Map.entry("messages.top-sell.close-lore", "close the leaderboard."),
+            Map.entry("messages.top-sell.prev-page-lore", "previous page."),
+            Map.entry("messages.top-sell.next-page-lore", "next page."),
+            Map.entry("messages.top-sell.total-players", "total players: "),
+            Map.entry("messages.top-sell.page-indicator", "page {page} / {total}"),
+            Map.entry("worth.format", "&7Worth &a&l${worth}"),
+            Map.entry("worth.order-format", "&7Worth &a&l~${worth}")
     );
 
     private final SellPlugin plugin;
@@ -62,6 +134,14 @@ public class ConfigMigrator {
                 + "); migrating to version " + CURRENT_VERSION + ".");
 
         backup(configFile, version);
+
+        // Clear values still sitting at a superseded default, so the merge
+        // below replaces them with the current one.
+        for (Map.Entry<String, String> superseded : SUPERSEDED_DEFAULTS.entrySet()) {
+            if (superseded.getValue().equals(config.getString(superseded.getKey()))) {
+                config.set(superseded.getKey(), null);
+            }
+        }
 
         // Merge any missing options from the bundled defaults.
         try (InputStream defStream = plugin.getResource("config.yml")) {

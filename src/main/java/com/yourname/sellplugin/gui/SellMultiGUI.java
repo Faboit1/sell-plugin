@@ -2,9 +2,8 @@ package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
-import com.yourname.sellplugin.util.SmallCaps;
+import com.yourname.sellplugin.util.Text;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -24,6 +23,16 @@ public class SellMultiGUI implements InventoryHolder {
 
     private static final int SIZE = 9;
 
+    // Shipped defaults, used only when a config key has been deleted outright.
+    private static final String DEFAULT_TITLE = "<dark_gray><bold>Multipliers";
+    private static final List<String> DEFAULT_CATEGORY_LORE = List.of(
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━",
+            "<gray> ▸ Earned: <aqua>{earned}x",
+            "<gray> ▸ Effective: <green>{effective}x",
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━",
+            "<yellow> ✦ Click to view progress"
+    );
+
     private final Inventory inv;
     private final SellPlugin plugin;
     private final Player player;
@@ -33,7 +42,7 @@ public class SellMultiGUI implements InventoryHolder {
         this.player = player;
 
         ConfigManager cfg = plugin.getConfigManager();
-        String title = cfg.getText("sellmulti.title", "&8&lMultipliers");
+        String title = cfg.getText("sellmulti.title", DEFAULT_TITLE);
         this.inv = Bukkit.createInventory(this, SIZE, title);
         populate();
     }
@@ -58,16 +67,13 @@ public class SellMultiGUI implements InventoryHolder {
         double multiplier = plugin.getMultiplierManager().getMultiplier(player, catId);
         double effective = multiplier;
 
-        String separator = cfg.getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
-
         List<String> lore = new ArrayList<>();
-        lore.add(separator);
-        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("sellmulti.earned-label", "earned: "))
-                + ChatColor.AQUA + String.format("%.2fx", multiplier));
-        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("sellmulti.effective-label", "effective: "))
-                + ChatColor.GREEN + String.format("%.2fx", effective));
-        lore.add(separator);
-        lore.add(ChatColor.YELLOW + " ✦ " + SmallCaps.convert(cfg.getText("sellmulti.click-to-view", "click to view progress")));
+        for (String line : cfg.getRawTextList("sellmulti.category-lore", DEFAULT_CATEGORY_LORE)) {
+            lore.add(Text.legacy(Text.fill(line,
+                    "category", cfg.getRawCategoryDisplayName(catId),
+                    "earned", String.format("%.2f", multiplier),
+                    "effective", String.format("%.2f", effective))));
+        }
 
         return makeItem(cfg.getCategoryMaterial(catId), cfg.getCategoryDisplayName(catId), lore);
     }

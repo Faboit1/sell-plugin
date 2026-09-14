@@ -1,12 +1,19 @@
 # ============================================================ #
 #                   SELL PLUGIN CONFIG                         #
 # ============================================================ #
+#
+# Every piece of text here is written in MiniMessage, so colours, gradients,
+# hex and decorations are yours to set and the plugin adds none of its own:
+#   <green>, <#00ffcc>, <bold>, <gradient:#ff0066:#ffcc00>text</gradient>
+# Full tag list: https://docs.advntr.dev/minimessage/format.html
+# Old & colour codes still work and can be mixed in, so an existing config
+# keeps rendering until you get round to converting it.
 
 # Internal schema version. DO NOT edit this by hand – the plugin uses it to
 # auto-migrate old configs (adding any new options you're missing) and it makes
 # a timestamped backup of your old file first. If this key is missing the plugin
 # assumes an old config and migrates anyway.
-config-version: 1
+config-version: 2
 
 # ---- Feature toggles --------------------------------------- #
 # Turn any major part of the plugin on or off. Everything defaults to on.
@@ -103,7 +110,7 @@ filler-block: "BLACK_STAINED_GLASS_PANE"
 # Supports the {worth} placeholder.
 worth:
   enabled: true
-  format: "&7Worth &a&l${worth}"
+  format: "<gray>Worth <green><bold>${worth}"
   # Show the worth line to players in CREATIVE mode?
   # Leave this false. Creative clients echo item lore back to the server, which
   # bakes the worth line into the real item and causes duplicate lines. Only
@@ -113,7 +120,7 @@ worth:
   # rather than the shop. It is a separate line so the figure can be marked as
   # an estimate: somebody else may fill that order before the player sells.
   # /sellworth (the price browser) is never affected by orders.
-  order-format: "&7Worth &a&l~${worth}"
+  order-format: "<gray>Worth <green><bold>~${worth}"
 
 # ---- FoOrders orders ----------------------------------------------- #
 # When FoOrders is installed, selling hands items to the players who have open
@@ -139,46 +146,36 @@ orders:
   # an estimate. Leave blank for no marker.
   estimate-marker: "~"
 
-# ---- Main Shop GUI (/sell) ---------------------------------- #
-# This opens the 9x6 sell GUI where players place items to sell.
-# The bottom-right corner has a "Sell" button (lime glass pane).
-# Closing the GUI also sells all items inside.
+# ---- Menu text ---------------------------------------------- #
+# Every title, button name and lore line lives under "messages" near the
+# bottom of this file. /sell shows the 9x6 menu players drop items into;
+# /sellall opens the sell-everything confirmation directly.
 
-gui:
-  title: "&8&lShop"
-  size: 54
-
-# ---- Sell All GUI (/sellall) -------------------------------- #
-# Simple one-button GUI to sell everything in your inventory.
-
-sell-all-gui:
-  title: "&8&lSell All Items"
-  size: 27
-  slot: 13
-  # Material of the sell-all button (change to any Minecraft block/item name)
-  item: "EMERALD_BLOCK"
-  name: "&a&lSell All Items"
-  lore:
-    - "&7Click to sell all sellable items"
-    - "&7in your inventory."
-    - ""
-    - "&eYour current Multipliers:"
-    - "{multipliers}"
-
-# ---- Sell Multi GUI (/sellmulti) ----------------------------- #
-# 1x9 GUI showing all category multipliers at a glance.
-# Clicking a category opens its progress path.
-
-sell-multi-gui:
-  title: "&8&lMultipliers"
-
-# ---- Worth GUI (/sellworth, /worth) -------------------------- #
-# Paginated item prices browser with category filter.
-
-worth-gui:
-  title: "&8&lItem Prices"
-  filter-all: "&e&lFILTER: &fAll"
-  filter-category: "&e&lFILTER: &f"
+# ---- Item prices dialog (/sellworth) ------------------------- #
+# On Minecraft 1.21.6 and newer, /sellworth opens one of the game's own dialog
+# screens listing every priced item at once with a search box, instead of the
+# paginated chest menu. Older servers always get the menu.
+worth-dialog:
+  enabled: true
+  # How many entries one dialog may carry. The whole screen is sent in a single
+  # packet, so the full price list cannot go out at once; players reach the rest
+  # through the search box. Raise carefully.
+  max-entries: 256
+  # How many entries sit side by side.
+  columns: 2
+  # How wide each entry is, in pixels.
+  entry-width: 200
+  # Text on the dialog itself. Placeholders on the entries: {item}, {base},
+  # {multiplier}, {price}, {category}
+  title: "<dark_gray><bold>Item Prices"
+  search-label: "Search"
+  search-button: "<yellow>Search"
+  search-tooltip: "Search the price list."
+  entry: "<white>{item} <dark_gray>- <green>${price}"
+  entry-tooltip: "Base ${base} x {multiplier} = ${price}"
+  showing: "<gray>Showing all {total} items."
+  truncated: "<gray>Showing {shown} of {total} items. Search to narrow them down."
+  no-matches: "<gray>No items match that search."
 
 # ---- Category order (shown in /sellmulti and /sellworth) ---- #
 # These must match the top-level keys in price.yml.
@@ -200,52 +197,52 @@ category-order:
 
 categories:
   armortools:
-    display-name: "&6Armor & Tools"
+    display-name: "<gold>Armor & Tools"
     material: "DIAMOND_SWORD"
     lore:
-      - "&7Sell your armor, weapons,"
-      - "&7and tools."
+      - "<gray>Sell your armor, weapons,"
+      - "<gray>and tools."
   blocks:
-    display-name: "&7Blocks"
+    display-name: "<gray>Blocks"
     material: "STONE"
     lore:
-      - "&7Sell building blocks."
+      - "<gray>Sell building blocks."
   crops:
-    display-name: "&aFarming"
+    display-name: "<green>Farming"
     material: "WHEAT"
     lore:
-      - "&7Sell crops and farm produce."
+      - "<gray>Sell crops and farm produce."
   enchantedbooks:
-    display-name: "&5Enchanted Books"
+    display-name: "<dark_purple>Enchanted Books"
     material: "ENCHANTED_BOOK"
     lore:
-      - "&7Sell enchanted books."
+      - "<gray>Sell enchanted books."
   fish:
-    display-name: "&bFishing"
+    display-name: "<aqua>Fishing"
     material: "COD"
     lore:
-      - "&7Sell fish and fishing loot."
+      - "<gray>Sell fish and fishing loot."
   mobdrops:
-    display-name: "&cMob Drops"
+    display-name: "<red>Mob Drops"
     material: "BONE"
     lore:
-      - "&7Sell mob loot and drops."
+      - "<gray>Sell mob loot and drops."
   naturalitems:
-    display-name: "&2Nature"
+    display-name: "<dark_green>Nature"
     material: "OAK_LOG"
     lore:
-      - "&7Sell logs, leaves, and"
-      - "&7other natural items."
+      - "<gray>Sell logs, leaves, and"
+      - "<gray>other natural items."
   ores:
-    display-name: "&eOres & Gems"
+    display-name: "<yellow>Ores & Gems"
     material: "IRON_ORE"
     lore:
-      - "&7Sell ores and precious gems."
+      - "<gray>Sell ores and precious gems."
   potions:
-    display-name: "&dPotions"
+    display-name: "<light_purple>Potions"
     material: "POTION"
     lore:
-      - "&7Sell potions and brewed items."
+      - "<gray>Sell potions and brewed items."
 
 # ---- GUI Icons --------------------------------------------- #
 # Customise every navigation / action icon used across all GUIs.
@@ -256,21 +253,21 @@ icons:
   # ── Shared navigation ──────────────────────────────────────────
   back:
     material: "ARROW"
-    name: "&c&lBack"
+    name: "<red><bold>Back"
     lore:
-      - "&7Return to the previous menu."
+      - "<gray>Return to the previous menu."
 
   prev-page:
     material: "ARROW"
-    name: "&e← Previous"
+    name: "<yellow>← Previous"
     lore:
-      - "&7Go to the previous page."
+      - "<gray>Go to the previous page."
 
   next-page:
     material: "ARROW"
-    name: "&eNext →"
+    name: "<yellow>Next →"
     lore:
-      - "&7Go to the next page."
+      - "<gray>Go to the next page."
 
   page-indicator:
     material: "PAPER"
@@ -280,139 +277,223 @@ icons:
   # ── Confirm / Cancel ───────────────────────────────────────────
   confirm:
     material: "LIME_STAINED_GLASS_PANE"
-    name: "&a&lConfirm"
+    name: "<green><bold>Confirm"
 
   cancel:
     material: "RED_STAINED_GLASS_PANE"
-    name: "&c&lCancel"
+    name: "<red><bold>Cancel"
     lore:
-      - "&7Go back without selling."
+      - "<gray>Go back without selling."
 
   # ── Sell button (in /sell GUI, bottom-right) ──────────────────
   sell-button:
     material: "LIME_STAINED_GLASS_PANE"
-    name: "&a&lSell"
+    name: "<green><bold>Sell"
 
   # ── Category Items GUI ─────────────────────────────────────────
   sell-category:
     material: "GOLD_INGOT"
-    name: "&a&lSell Category"
+    name: "<green><bold>Sell Category"
 
   # ── Confirm Sell-All info icon ─────────────────────────────────
   sell-all-info:
     material: "CHEST"
-    name: "&f&lSell All"
+    name: "<white><bold>Sell All"
 
   # ── TopSell leaderboard ─────────────────────────────────────────
   topsell-close:
     material: "BARRIER"
-    name: "&c&lClose"
+    name: "<red><bold>Close"
     lore:
-      - "&7Close the leaderboard."
+      - "<gray>Close the leaderboard."
 
 # ---- Messages ---------------------------------------------- #
 # Every piece of text shown to players can be customised here.
 # & colour codes are supported. Placeholders are listed per entry.
 messages:
-  prefix: "&8[&aSellPlugin&8] "
-  no-permission: "&cYou do not have permission for this."
-  sold-items: "&aYou sold &e{amount} &aitems for &e${price}&a!"
-  nothing-to-sell: "&cYou have no sellable items in your inventory."
-  economy-error: "&cAn economy error occurred. Please contact an admin."
+  prefix: "<dark_gray>[<green>SellPlugin<dark_gray>] "
+  no-permission: "<red>You do not have permission for this."
+  sold-items: "<green>You sold <yellow>{amount} <green>items for <yellow>${price}<green>!"
+  nothing-to-sell: "<red>You have no sellable items in your inventory."
+  economy-error: "<red>An economy error occurred. Please contact an admin."
   # Shown when a player uses a command for a feature that's toggled off.
-  feature-disabled: "&cThis feature is currently disabled."
+  feature-disabled: "<red>This feature is currently disabled."
 
   # ── Commands / console messages ───────────────────────────────
-  player-only-command: "&cOnly players can use this command."
-  reload-no-permission: "&cYou do not have permission to reload the config."
-  reload-success: "&aSellPlugin configuration reloaded."
+  player-only-command: "<red>Only players can use this command."
+  reload-no-permission: "<red>You do not have permission to reload the config."
+  reload-success: "<green>SellPlugin configuration reloaded."
 
   # ── /showworth (per-player worth tooltip toggle) ──────────────
-  showworth-usage: "&cUsage: /showworth [true|false]"
-  showworth-enabled: "&aItem worth is now &lshown&r&a in your inventory."
-  showworth-disabled: "&eItem worth is now &lhidden&r&e in your inventory."
+  showworth-usage: "<red>Usage: /showworth [true|false]"
+  showworth-enabled: "<green>Item worth is now <bold>shown<reset><green> in your inventory."
+  showworth-disabled: "<yellow>Item worth is now <bold>hidden<reset><yellow> in your inventory."
 
   # ── Shared decorative separator used in lots of lore lists ────
-  lore-separator: "&8━━━━━━━━━━━━━━━━━━━"
+  lore-separator: "<dark_gray>━━━━━━━━━━━━━━━━━━━"
 
   # ── Sell notification (title pop-up, {count} = items sold) ────
-  action-bar: "&a+${amount}"
-  sell-title: "&a+${amount}"
-  sell-subtitle: "&7You sold {count} item(s)"
+  action-bar: "<green>+${amount}"
+  sell-title: "<green>+${amount}"
+  sell-subtitle: "<gray>You sold {count} item(s)"
 
   # ── Main Shop GUI (/sell) ──────────────────────────────────────
   shop:
-    # Inventory title. Rendered in small caps automatically.
-    title: "put items here to sell"
-    sell-button-name: "&a&lSell"
-    sell-value-label: "value: "
-    sell-empty: "no sellable items"
-    sell-click: "click to sell all items!"
+    title: "<dark_gray><bold>Put items here to sell"
+    sell-button-name: "<green><bold>Sell"
+    # The Sell button's lore, line for line. Add, remove or reorder freely.
+    # Placeholders: {value} total value, {items} item count,
+    #               {marker} "~" while an open order makes up part of the value
+    sell-button-lore:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<gray> ▸ Value: <green>{marker}${value}"
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<yellow> ✦ Click to sell all items!"
+    # Shown instead when nothing in the menu is worth anything.
+    sell-button-lore-empty:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<gray> ▸ No sellable items"
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<yellow> ✦ Click to sell all items!"
 
   # ── Sell Multi GUI (/sellmulti) ────────────────────────────────
   sellmulti:
-    title: "&8&lMultipliers"
-    earned-label: "earned: "
-    effective-label: "effective: "
-    click-to-view: "click to view progress"
+    title: "<dark_gray><bold>Multipliers"
+    # Placeholders: {category}, {earned}, {effective}
+    category-lore:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<gray> ▸ Earned: <aqua>{earned}x"
+      - "<gray> ▸ Effective: <green>{effective}x"
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<yellow> ✦ Click to view progress"
 
   # ── Category Items GUI (list of items in a category) ──────────
   category-items:
-    title-suffix: "&8 – Items"
-    total-items: "&7Total items: {count}"
-    page-indicator: "&fPage {page} / {total}"
-    category-label: "category: "
-    items-label: "items: "
-    earn-label: "earn: "
-    no-items-to-sell: "no items to sell."
+    # Placeholder: {category}
+    title: "{category}<dark_gray> – Items"
+    total-items: "<gray>Total items: {count}"
+    page-indicator: "<white>Page {page} / {total}"
+    # One item in the list. Placeholders: {item}, {base}, {multiplier}, {price}
+    item-name: "<white>{item}"
+    item-lore:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━"
+      - "<gray> ▸ <white>Base:  <green>${base}"
+      - "<gray> ▸ <white>Mult:  <aqua>{multiplier}x"
+      - "<gray> ▸ <white>Price: <green>${price}"
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━"
+    # The Sell Category button. Placeholders: {category}, {items}, {value}, {marker}
+    sell-lore:
+      - "<gray> ▸ Category: {category}"
+      - "<gray> ▸ Items: <white>{items}"
+      - "<gray> ▸ Earn: <green>{marker}${value}"
+    sell-lore-empty:
+      - "<gray> ▸ Category: {category}"
+      - "<red> ▸ No items to sell."
 
   # ── Category Progress GUI (multiplier snake path) ─────────────
   category-progress:
-    back-lore: "return to the main menu."
-    node-multiplier-suffix: "multiplier"
-    node-status-label: "status: "
-    node-status-completed: "completed"
-    node-status-in-progress: "in progress"
-    node-status-locked: "locked"
-    node-click-to-view: "click to view items & prices"
-    node-earned-label: "earned: "
-    node-required-label: "required: "
-    node-progress-label: "progress: "
-    node-need-label: "need: "
-    node-need-suffix: "more to unlock"
+    # Placeholder: {category}
+    title: "{category}"
+    # Each milestone node. Placeholders: {milestone}, {status}, {status_color},
+    # {earned}, {required}, {percent}, {remaining}, {category}
+    node-name: "{status_color}<bold>{milestone}x Multiplier"
+    status-completed: "Completed"
+    status-in-progress: "In progress"
+    status-locked: "Locked"
+    status-color-completed: "<green>"
+    status-color-in-progress: "<yellow>"
+    status-color-locked: "<dark_gray>"
+    node-lore:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<gray> ▸ Status: {status_color}{status}"
+    # Added to the first node only, which opens the item list.
+    node-lore-start:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<yellow> ✦ Click to view items & prices"
+    # Added to the milestone currently being worked toward.
+    node-lore-progress:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<gray> ▸ Earned: <green>${earned}"
+      - "<gray> ▸ Required: <green>${required}"
+      - "<gray> ▸ Progress: <yellow>{percent}%"
+    # Added to milestones still locked.
+    node-lore-locked:
+      - "<gray> ▸ Need: <green>${remaining}<gray> more to unlock"
 
   # ── Confirm Sell (category) GUI ────────────────────────────────
+  # Placeholders throughout: {category}, {items}, {value}, {marker}
   confirm-sell:
-    title-prefix: "sell your "
-    items-label: "items: "
-    value-label: "value: "
-    confirm-lore-line1: "sell all "
-    confirm-lore-line2: " items"
-    confirm-lore-line3: "from your inventory."
-    confirm-earn: "you will earn: $"
-    cancel-lore: "go back without selling."
+    title: "<dark_gray><bold>Sell your {category}"
+    info-lore:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<gray> ▸ Items: <white>{items}"
+      - "<gray> ▸ Value: <green>{marker}${value}"
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+    # Lines mentioning {value} are dropped when there is nothing to sell.
+    confirm-lore:
+      - "<gray> ▸ Sell all {category}<gray> items"
+      - "<gray> ▸ from your inventory."
+      - "<green> ▸ You will earn: {marker}${value}"
+    cancel-lore:
+      - "<gray> ▸ Go back without selling."
 
-  # ── Confirm Sell-All GUI ───────────────────────────────────────
+  # ── Confirm Sell-All GUI (opened directly by /sellall) ─────────
+  # Placeholders throughout: {items}, {value}, {marker}
   confirm-sell-all:
-    title: "confirm sell all"
-    items-label: "items: "
-    value-label: "value: "
-    confirm-lore: "sell all items from your inventory."
-    confirm-earn: "you will earn: $"
-    cancel-lore: "go back without selling."
+    title: "<dark_gray><bold>Confirm sell all"
+    info-name: "<white><bold>Sell all"
+    info-lore:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<gray> ▸ Items: <white>{items}"
+      - "<gray> ▸ Value: <green>{marker}${value}"
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+    # Lines mentioning {value} are dropped when there is nothing to sell.
+    confirm-lore:
+      - "<gray> ▸ Sell all items from your inventory."
+      - "<green> ▸ You will earn: {marker}${value}"
+    cancel-lore:
+      - "<gray> ▸ Go back without selling."
 
   # ── Top Sellers Leaderboard GUI ────────────────────────────────
   top-sell:
-    title: "top sellers"
-    close-lore: "close the leaderboard."
-    prev-page-lore: "previous page."
-    next-page-lore: "next page."
-    total-players: "total players: "
-    page-indicator: "page {page} / {total}"
-    total-earned-label: "total earned: "
+    title: "<dark_gray><bold>Top sellers"
+    close-lore: "<gray>Close the leaderboard."
+    prev-page-lore: "<gray>Previous page."
+    next-page-lore: "<gray>Next page."
+    total-players: "<gray>Total players: <white>{count}"
+    page-indicator: "<white>Page {page} / {total}"
+    # One leaderboard entry. Placeholders: {rank}, {rank_color}, {player}, {earned}
+    entry-name: "{rank_color}#{rank} <white>{player}"
+    entry-lore:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+      - "<gray> ▸ Total earned: <green>${earned}"
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+    rank-color-first: "<gold>"
+    rank-color-second: "<gray>"
+    rank-color-third: "<dark_red>"
+    rank-color-other: "<white>"
 
   # ── Worth GUI (/sellworth, /worth) ─────────────────────────────
   worth-gui:
-    title: "&8&lItem Prices"
-    filter-all: "&e&lFILTER: &fAll"
-    filter-category: "&e&lFILTER: &f"
+    title: "<dark_gray><bold>Item Prices <gray>(Page {page})"
+    filter-all: "<yellow><bold>FILTER: <white>All"
+    # Placeholder: {category}
+    filter-category: "<yellow><bold>FILTER: {category}"
+    filter-hint: "<gray>Click to cycle filter."
+    filter-option-all: "All"
+    filter-option: "<gray> • {category}"
+    filter-option-selected: "<green> • {category}"
+    close-lore: "<gray>Close the menu."
+    prev-page-lore: "<gray>Previous page."
+    next-page-lore: "<gray>Next page."
+    total-items: "<gray>Total items: <white>{count}"
+    page-indicator: "<white>Page {page} / {total}"
+    # One priced item. Placeholders: {item}, {base}, {multiplier}, {price}, {category}
+    item-name: "<white>{item}"
+    item-lore:
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━"
+      - "<gray> ▸ <white>Base:  <green>${base}"
+      - "<gray> ▸ <white>Mult:  <aqua>{multiplier}x"
+      - "<gray> ▸ <white>Price: <green>${price}"
+      - "<dark_gray>━━━━━━━━━━━━━━━━━━━━━"
+      - "<gray> Category: {category}"

@@ -76,7 +76,20 @@ public final class OrderIntegration {
                 return;
             }
 
-            Class<?> apiClass = resolved.getClass();
+            // Look the methods up on the public API interface, not on whatever
+            // class implements it: that implementation is package-private inside
+            // FoOrders, and reflecting against it is rejected as inaccessible
+            // even though its methods are public.
+            Class<?> apiClass = foOrders.getClass().getClassLoader()
+                .loadClass("me.foesio.foOrders.api.FoOrdersOrderFillApi");
+            if (!apiClass.isInstance(resolved)) {
+                plugin.getLogger().warning(
+                    "FoOrders returned an unexpected order API type (" + resolved.getClass().getName()
+                        + "). Orders will not be filled by selling."
+                );
+                return;
+            }
+
             int version = (int) apiClass.getMethod("apiVersion").invoke(resolved);
             if (version < SUPPORTED_API_VERSION) {
                 plugin.getLogger().warning(
@@ -91,9 +104,6 @@ public final class OrderIntegration {
             fillMethod = apiClass.getMethod(
                 "fillOrders", Player.class, ItemStack.class, int.class, double.class, boolean.class);
             revisionMethod = apiClass.getMethod("openOrderRevision");
-            quoteMethod.setAccessible(true);
-            fillMethod.setAccessible(true);
-            revisionMethod.setAccessible(true);
             quoteCache.clear();
             cachedRevision = Long.MIN_VALUE;
             api = resolved;

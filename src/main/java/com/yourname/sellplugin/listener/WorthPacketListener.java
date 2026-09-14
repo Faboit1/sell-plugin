@@ -49,11 +49,6 @@ public class WorthPacketListener {
     }
 
     public void register() {
-        if (plugin.getServer().getPluginManager().getPlugin("ProtocolLib") == null) {
-            plugin.getLogger().warning("ProtocolLib not found; sell worth tooltips are disabled.");
-            return;
-        }
-
         ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
         packetListener = new PacketAdapter(plugin, ListenerPriority.NORMAL,
                 PacketType.Play.Server.SET_SLOT,

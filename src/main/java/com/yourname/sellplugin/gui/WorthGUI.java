@@ -5,9 +5,8 @@ import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.PriceManager;
 import com.yourname.sellplugin.util.ItemNameFormatter;
 import com.yourname.sellplugin.util.NumberFormatter;
-import com.yourname.sellplugin.util.SmallCaps;
+import com.yourname.sellplugin.util.Text;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -49,6 +48,16 @@ public class WorthGUI implements InventoryHolder {
     // Filter categories (null = all)
     private static final String FILTER_ALL = "all";
 
+    // Shipped default, used only when the config key has been deleted outright.
+    private static final List<String> DEFAULT_ITEM_LORE = List.of(
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━━━",
+            "<gray> ▸ <white>Base:  <green>${base}",
+            "<gray> ▸ <white>Mult:  <aqua>{multiplier}x",
+            "<gray> ▸ <white>Price: <green>${price}",
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━━━",
+            "<gray> Category: {category}"
+    );
+
     private final Inventory inv;
     private final SellPlugin plugin;
     private final Player player;
@@ -64,9 +73,10 @@ public class WorthGUI implements InventoryHolder {
         this.itemKeys = buildItemKeyList();
 
         ConfigManager cfg = plugin.getConfigManager();
-        String titleBase = cfg.getText("worth-gui.title", "&8&lItem Prices");
-        String pageStr = " (Page " + (page + 1) + ")";
-        this.inv = Bukkit.createInventory(this, 54, titleBase + pageStr);
+        String title = Text.legacy(Text.fill(
+                cfg.getRawText("worth-gui.title", "<dark_gray><bold>Item Prices <gray>(Page {page})"),
+                "page", page + 1));
+        this.inv = Bukkit.createInventory(this, 54, title);
         populate();
     }
 
@@ -104,27 +114,28 @@ public class WorthGUI implements InventoryHolder {
 
         // Close button
         List<String> closeLore = cfg.getIconLore("topsell-close",
-                Collections.singletonList(ChatColor.GRAY + "Close the menu."));
+                List.of(cfg.getRawText("worth-gui.close-lore", "<gray>Close the menu.")));
         inv.setItem(SLOT_CLOSE, makeItem(
                 cfg.getIconMaterial("topsell-close", Material.BARRIER),
-                cfg.getIconName("topsell-close", "&c&lClose"),
+                cfg.getIconName("topsell-close", "<red><bold>Close"),
                 closeLore));
 
         // Previous page
         if (page > 0) {
             List<String> prevLore = cfg.getIconLore("prev-page",
-                    Collections.singletonList(ChatColor.GRAY + "Previous page."));
+                    List.of(cfg.getRawText("worth-gui.prev-page-lore", "<gray>Previous page.")));
             inv.setItem(SLOT_PREV, makeItem(
                     cfg.getIconMaterial("prev-page", Material.ARROW),
-                    cfg.getIconName("prev-page", "&e← Previous"),
+                    cfg.getIconName("prev-page", "<yellow>← Previous"),
                     prevLore));
         }
 
         // Filter button
         List<String> filterLore = buildFilterLore();
         String filterName = FILTER_ALL.equals(filter)
-                ? cfg.getText("worth-gui.filter-all", "&e&lFILTER: &fAll")
-                : cfg.getText("worth-gui.filter-category", "&e&lFILTER: &f") + cfg.getCategoryDisplayName(filter);
+                ? cfg.getText("worth-gui.filter-all", "<yellow><bold>FILTER: <white>All")
+                : Text.legacy(Text.fill(cfg.getRawText("worth-gui.filter-category", "<yellow><bold>FILTER: {category}"),
+                        "category", cfg.getRawCategoryDisplayName(filter)));
         inv.setItem(SLOT_FILTER, makeItem(
                 Material.HOPPER,
                 filterName,
@@ -132,20 +143,22 @@ public class WorthGUI implements InventoryHolder {
 
         // Page indicator
         int totalPages = Math.max(1, (int) Math.ceil((double) itemKeys.size() / ITEMS_PER_PAGE));
-        List<String> infoLore = Collections.singletonList(
-                ChatColor.GRAY + "Total items: " + itemKeys.size());
+        List<String> infoLore = List.of(Text.legacy(Text.fill(
+                cfg.getRawText("worth-gui.total-items", "<gray>Total items: <white>{count}"),
+                "count", itemKeys.size())));
         inv.setItem(SLOT_INFO, makeItem(
                 cfg.getIconMaterial("page-indicator", Material.PAPER),
-                ChatColor.WHITE + "Page " + (page + 1) + " / " + totalPages,
+                Text.legacy(Text.fill(cfg.getRawText("worth-gui.page-indicator", "<white>Page {page} / {total}"),
+                        "page", page + 1, "total", totalPages)),
                 infoLore));
 
         // Next page
         if ((page + 1) * ITEMS_PER_PAGE < itemKeys.size()) {
             List<String> nextLore = cfg.getIconLore("next-page",
-                    Collections.singletonList(ChatColor.GRAY + "Next page."));
+                    List.of(cfg.getRawText("worth-gui.next-page-lore", "<gray>Next page.")));
             inv.setItem(SLOT_NEXT, makeItem(
                     cfg.getIconMaterial("next-page", Material.ARROW),
-                    cfg.getIconName("next-page", "&eNext →"),
+                    cfg.getIconName("next-page", "<yellow>Next →"),
                     nextLore));
         }
     }
@@ -153,23 +166,18 @@ public class WorthGUI implements InventoryHolder {
     private List<String> buildFilterLore() {
         ConfigManager cfg = plugin.getConfigManager();
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.GRAY + "Click to cycle filter.");
+        lore.add(cfg.getText("worth-gui.filter-hint", "<gray>Click to cycle filter."));
         lore.add("");
 
-        List<String> categories = cfg.getCategoryOrder();
-        // Show current filter highlighted
-        if (FILTER_ALL.equals(filter)) {
-            lore.add(ChatColor.GREEN + " • All");
-        } else {
-            lore.add(ChatColor.GRAY + " • All");
-        }
-        for (String cat : categories) {
-            String displayName = ChatColor.stripColor(cfg.getCategoryDisplayName(cat));
-            if (cat.equalsIgnoreCase(filter)) {
-                lore.add(ChatColor.GREEN + " • " + displayName);
-            } else {
-                lore.add(ChatColor.GRAY + " • " + displayName);
-            }
+        String selected = cfg.getRawText("worth-gui.filter-option-selected", "<green> • {category}");
+        String option = cfg.getRawText("worth-gui.filter-option", "<gray> • {category}");
+
+        String allLabel = cfg.getRawText("worth-gui.filter-option-all", "All");
+        lore.add(Text.legacy(Text.fill(FILTER_ALL.equals(filter) ? selected : option, "category", allLabel)));
+        for (String cat : cfg.getCategoryOrder()) {
+            lore.add(Text.legacy(Text.fill(
+                    cat.equalsIgnoreCase(filter) ? selected : option,
+                    "category", cfg.getRawCategoryDisplayName(cat))));
         }
         return lore;
     }
@@ -184,18 +192,18 @@ public class WorthGUI implements InventoryHolder {
         ItemStack item = resolveItemStack(itemKey);
 
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━");
-        lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Base:  "
-                + ChatColor.GREEN + "$" + NumberFormatter.format(base));
-        lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Mult:  "
-                + ChatColor.AQUA + String.format("%.2fx", effectiveMultiplier));
-        lore.add(ChatColor.GRAY + " ▸ " + ChatColor.WHITE + "Price: "
-                + ChatColor.GREEN + "$" + NumberFormatter.format(effective));
-        lore.add(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━");
-        lore.add(ChatColor.GRAY + " Category: " + ChatColor.WHITE
-                + ChatColor.stripColor(plugin.getConfigManager().getCategoryDisplayName(category)));
+        for (String line : plugin.getConfigManager().getRawTextList("worth-gui.item-lore", DEFAULT_ITEM_LORE)) {
+            lore.add(Text.legacy(Text.fill(line,
+                    "item", ItemNameFormatter.formatKey(itemKey),
+                    "base", NumberFormatter.format(base),
+                    "multiplier", String.format("%.2f", effectiveMultiplier),
+                    "price", NumberFormatter.format(effective),
+                    "category", plugin.getConfigManager().getRawCategoryDisplayName(category))));
+        }
 
-        String displayName = ChatColor.WHITE + ItemNameFormatter.formatKey(itemKey);
+        String displayName = Text.legacy(Text.fill(
+                plugin.getConfigManager().getRawText("worth-gui.item-name", "<white>{item}"),
+                "item", ItemNameFormatter.formatKey(itemKey)));
 
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {

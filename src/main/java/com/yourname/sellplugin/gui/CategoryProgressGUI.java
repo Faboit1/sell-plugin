@@ -3,9 +3,8 @@ package com.yourname.sellplugin.gui;
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.util.NumberFormatter;
-import com.yourname.sellplugin.util.SmallCaps;
+import com.yourname.sellplugin.util.Text;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -44,6 +43,25 @@ public class CategoryProgressGUI implements InventoryHolder {
 
     /** Back button slot (bottom-right). */
     public static final int SLOT_BACK = 53;
+
+    // Shipped defaults, used only when a config key has been deleted outright.
+    private static final List<String> DEFAULT_NODE_LORE = List.of(
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━",
+            "<gray> ▸ Status: {status_color}{status}"
+    );
+    private static final List<String> DEFAULT_NODE_LORE_START = List.of(
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━",
+            "<yellow> ✦ Click to view items & prices"
+    );
+    private static final List<String> DEFAULT_NODE_LORE_PROGRESS = List.of(
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━",
+            "<gray> ▸ Earned: <green>${earned}",
+            "<gray> ▸ Required: <green>${required}",
+            "<gray> ▸ Progress: <yellow>{percent}%"
+    );
+    private static final List<String> DEFAULT_NODE_LORE_LOCKED = List.of(
+            "<gray> ▸ Need: <green>${remaining}<gray> more to unlock"
+    );
 
     /**
      * W-shape path (21 nodes).
@@ -94,7 +112,9 @@ public class CategoryProgressGUI implements InventoryHolder {
         this.categoryId = categoryId;
 
         ConfigManager cfg = plugin.getConfigManager();
-        String title = cfg.getCategoryDisplayName(categoryId);
+        String title = Text.legacy(Text.fill(
+                cfg.getRawText("category-progress.title", "{category}"),
+                "category", cfg.getRawCategoryDisplayName(categoryId)));
         this.inv = Bukkit.createInventory(this, SIZE, title);
         populate();
     }
@@ -115,11 +135,10 @@ public class CategoryProgressGUI implements InventoryHolder {
         buildSnakePath(mult, moneyEarned);
 
         // ── Back button (bottom-right) ──────────────────────────────────────
-        List<String> backLore = cfg.getIconLore("back",
-                Collections.singletonList(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-progress.back-lore", "return to the main menu."))));
+        List<String> backLore = cfg.getIconLore("back", List.of("<gray> ▸ Return to the main menu."));
         inv.setItem(SLOT_BACK,
                 makeItem(cfg.getIconMaterial("back", Material.ARROW),
-                        cfg.getIconName("back", "&c&l" + SmallCaps.convert("back")),
+                        cfg.getIconName("back", "<red><bold>Back"),
                         backLore));
     }
 
@@ -137,69 +156,85 @@ public class CategoryProgressGUI implements InventoryHolder {
             boolean inProgress = !completed && currentMultiplier >= milestone - EPSILON;
 
             Material paneMat;
-            ChatColor nameColour;
-            String status;
-
+            String state;
             if (completed) {
                 paneMat = cfg.getProgressBarCompletedColor();
-                nameColour = ChatColor.GREEN;
-                status = SmallCaps.convert(cfg.getText("category-progress.node-status-completed", "completed"));
+                state = "completed";
             } else if (inProgress) {
                 paneMat = cfg.getProgressBarInProgressColor();
-                nameColour = ChatColor.YELLOW;
-                status = SmallCaps.convert(cfg.getText("category-progress.node-status-in-progress", "in progress"));
+                state = "in-progress";
             } else {
                 paneMat = cfg.getProgressBarLockedColor();
-                nameColour = ChatColor.DARK_GRAY;
-                status = SmallCaps.convert(cfg.getText("category-progress.node-status-locked", "locked"));
+                state = "locked";
             }
 
             // First node uses the category icon instead of glass
             boolean isStart = (i == 0);
             Material displayMat = isStart ? cfg.getCategoryMaterial(categoryId) : paneMat;
 
-            String label = nameColour + "" + ChatColor.BOLD
-                    + String.format("%.1fx", milestone)
-                    + " " + SmallCaps.convert(cfg.getText("category-progress.node-multiplier-suffix", "multiplier"));
+            double moneyRequired = plugin.getMultiplierManager().getCumulativeThreshold(i + 1);
+            double percentage = moneyRequired > 0
+                    ? Math.min(100.0, (moneyEarned / moneyRequired) * 100.0)
+                    : 0;
+            double remaining = Math.max(0, plugin.getMultiplierManager().getCumulativeThreshold(i) - moneyEarned);
 
-            String separator = cfg.getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
-            List<String> lore = new ArrayList<>();
-            lore.add(separator);
-            lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-progress.node-status-label", "status: ")) + nameColour + status);
+            Object[] placeholders = {
+                    "category", cfg.getRawCategoryDisplayName(categoryId),
+                    "milestone", String.format("%.1f", milestone),
+                    "status", cfg.getRawText("category-progress.status-" + state, defaultStatus(state)),
+                    "status_color", cfg.getRawText("category-progress.status-color-" + state, defaultStatusColor(state)),
+                    "earned", NumberFormatter.format(moneyEarned),
+                    "required", NumberFormatter.format(moneyRequired),
+                    "percent", String.format("%.1f", percentage),
+                    "remaining", NumberFormatter.format(remaining)
+            };
+
+            String label = Text.legacy(Text.fill(
+                    cfg.getRawText("category-progress.node-name", "{status_color}<bold>{milestone}x Multiplier"),
+                    placeholders));
+
+            List<String> lore = new ArrayList<>(
+                    renderLines(cfg.getRawTextList("category-progress.node-lore", DEFAULT_NODE_LORE), placeholders));
 
             if (isStart) {
-                lore.add(separator);
-                lore.add(ChatColor.YELLOW + " ✦ " + SmallCaps.convert(cfg.getText("category-progress.node-click-to-view", "click to view items & prices")));
+                lore.addAll(renderLines(
+                        cfg.getRawTextList("category-progress.node-lore-start", DEFAULT_NODE_LORE_START), placeholders));
             }
-
-            if (inProgress) {
-                // Show cumulative money earned vs required to reach next milestone
-                double moneyRequired = plugin.getMultiplierManager().getCumulativeThreshold(i + 1);
-                if (moneyRequired > 0) {
-                    double percentage = Math.min(100.0, (moneyEarned / moneyRequired) * 100.0);
-                    lore.add(separator);
-                    lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-progress.node-earned-label", "earned: "))
-                            + ChatColor.GREEN + "$" + NumberFormatter.format(moneyEarned));
-                    lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-progress.node-required-label", "required: "))
-                            + ChatColor.GREEN + "$" + NumberFormatter.format(moneyRequired));
-                    lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-progress.node-progress-label", "progress: "))
-                            + ChatColor.YELLOW + String.format("%.1f%%", percentage));
-                }
+            // Only a node being worked toward has a meaningful requirement, and
+            // only a locked one has a gap left to close.
+            if (inProgress && moneyRequired > 0) {
+                lore.addAll(renderLines(
+                        cfg.getRawTextList("category-progress.node-lore-progress", DEFAULT_NODE_LORE_PROGRESS), placeholders));
             }
-
-            if (!completed && !isStart && !inProgress) {
-                // Show how much more money is needed for locked nodes
-                double moneyNeeded = plugin.getMultiplierManager().getCumulativeThreshold(i);
-                double remaining = Math.max(0, moneyNeeded - moneyEarned);
-                if (remaining > 0) {
-                    lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-progress.node-need-label", "need: "))
-                            + ChatColor.GREEN + "$" + NumberFormatter.format(remaining)
-                            + ChatColor.GRAY + " " + SmallCaps.convert(cfg.getText("category-progress.node-need-suffix", "more to unlock")));
-                }
+            if (!completed && !inProgress && !isStart && remaining > 0) {
+                lore.addAll(renderLines(
+                        cfg.getRawTextList("category-progress.node-lore-locked", DEFAULT_NODE_LORE_LOCKED), placeholders));
             }
 
             inv.setItem(slot, makeItem(displayMat, label, lore));
         }
+    }
+
+    private List<String> renderLines(List<String> template, Object... placeholders) {
+        List<String> rendered = new ArrayList<>(template.size());
+        for (String line : template) rendered.add(Text.legacy(Text.fill(line, placeholders)));
+        return rendered;
+    }
+
+    private String defaultStatus(String state) {
+        return switch (state) {
+            case "completed" -> "Completed";
+            case "in-progress" -> "In progress";
+            default -> "Locked";
+        };
+    }
+
+    private String defaultStatusColor(String state) {
+        return switch (state) {
+            case "completed" -> "<green>";
+            case "in-progress" -> "<yellow>";
+            default -> "<dark_gray>";
+        };
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

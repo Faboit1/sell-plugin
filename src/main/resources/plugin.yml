@@ -17,8 +17,8 @@ commands:
     aliases: [multipliers, sellmultiplier]
     permission: sellplugin.use
   sellworth:
-    description: Opens the item prices GUI to browse item values.
-    usage: /sellworth
+    description: Browse item prices, optionally filtered by a search term.
+    usage: /sellworth [search]
     aliases: [worth, prices, itemprices]
     permission: sellplugin.use
   showworth:

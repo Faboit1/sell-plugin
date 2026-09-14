@@ -26,6 +26,13 @@ public class WorthCommand implements CommandExecutor {
             return true;
         }
 
+        // The dialog shows the whole list at once with a search box; the
+        // paginated menu is what older servers get.
+        String search = args.length > 0 ? String.join(" ", args) : "";
+        if (plugin.getWorthDialogService().open(player, search)) {
+            return true;
+        }
+
         new WorthGUI(plugin, player, "all", 0).open(player);
         return true;
     }

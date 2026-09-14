@@ -5,9 +5,8 @@ import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.MultiplierManager.LeaderboardEntry;
 import com.yourname.sellplugin.util.NumberFormatter;
 import com.yourname.sellplugin.util.Scheduler;
-import com.yourname.sellplugin.util.SmallCaps;
+import com.yourname.sellplugin.util.Text;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -51,6 +50,13 @@ public class TopSellGUI implements InventoryHolder {
     public static final int SLOT_INFO  = 49;
     public static final int SLOT_NEXT  = 50;
 
+    // Shipped default, used only when the config key has been deleted outright.
+    private static final List<String> DEFAULT_ENTRY_LORE = List.of(
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━",
+            "<gray> ▸ Total earned: <green>${earned}",
+            "<dark_gray>━━━━━━━━━━━━━━━━━━━"
+    );
+
     private final Inventory inv;
     private final SellPlugin plugin;
     private final Player viewer;
@@ -64,8 +70,7 @@ public class TopSellGUI implements InventoryHolder {
         this.page    = page;
 
         ConfigManager cfg = plugin.getConfigManager();
-        String title = ChatColor.DARK_GRAY + "" + ChatColor.BOLD
-                + SmallCaps.convert(cfg.getText("top-sell.title", "top sellers"));
+        String title = cfg.getText("top-sell.title", "<dark_gray><bold>Top sellers");
         this.inv = Bukkit.createInventory(this, SIZE, title);
         populate();
     }
@@ -102,29 +107,30 @@ public class TopSellGUI implements InventoryHolder {
 
         // Close button
         List<String> closeLore = cfg.getIconLore("topsell-close",
-                Collections.singletonList(ChatColor.GRAY + SmallCaps.convert(cfg.getText("top-sell.close-lore", "close the leaderboard."))));
+                List.of(cfg.getRawText("top-sell.close-lore", "<gray>Close the leaderboard.")));
         inv.setItem(SLOT_CLOSE, makeItem(
                 cfg.getIconMaterial("topsell-close", Material.BARRIER),
-                cfg.getIconName("topsell-close", "&c&l" + SmallCaps.convert("close")),
+                cfg.getIconName("topsell-close", "<red><bold>Close"),
                 closeLore));
 
         // Previous page
         if (page > 0) {
             List<String> prevLore = cfg.getIconLore("prev-page",
-                    Collections.singletonList(ChatColor.GRAY + SmallCaps.convert(cfg.getText("top-sell.prev-page-lore", "previous page."))));
+                    List.of(cfg.getRawText("top-sell.prev-page-lore", "<gray>Previous page.")));
             inv.setItem(SLOT_PREV, makeItem(
                     cfg.getIconMaterial("prev-page", Material.ARROW),
-                    cfg.getIconName("prev-page", "&e← " + SmallCaps.convert("previous")),
+                    cfg.getIconName("prev-page", "<yellow>← Previous"),
                     prevLore));
         }
 
         // Page indicator
         int totalPages = Math.max(1, (int) Math.ceil((double) entries.size() / ENTRIES_PER_PAGE));
         List<String> infoLore = Collections.singletonList(
-                ChatColor.GRAY + SmallCaps.convert(cfg.getText("top-sell.total-players", "total players: ")) + entries.size());
+                Text.legacy(Text.fill(cfg.getRawText("top-sell.total-players", "<gray>Total players: <white>{count}"),
+                        "count", entries.size())));
         inv.setItem(SLOT_INFO, makeItem(
                 cfg.getIconMaterial("page-indicator", Material.PAPER),
-                ChatColor.WHITE + SmallCaps.convert(cfg.getText("top-sell.page-indicator", "page {page} / {total}")
+                Text.legacy(cfg.getRawText("top-sell.page-indicator", "<white>Page {page} / {total}")
                         .replace("{page}", String.valueOf(page + 1))
                         .replace("{total}", String.valueOf(totalPages))),
                 infoLore));
@@ -132,10 +138,10 @@ public class TopSellGUI implements InventoryHolder {
         // Next page
         if ((page + 1) * ENTRIES_PER_PAGE < entries.size()) {
             List<String> nextLore = cfg.getIconLore("next-page",
-                    Collections.singletonList(ChatColor.GRAY + SmallCaps.convert(cfg.getText("top-sell.next-page-lore", "next page."))));
+                    List.of(cfg.getRawText("top-sell.next-page-lore", "<gray>Next page.")));
             inv.setItem(SLOT_NEXT, makeItem(
                     cfg.getIconMaterial("next-page", Material.ARROW),
-                    cfg.getIconName("next-page", "&e" + SmallCaps.convert("next") + " →"),
+                    cfg.getIconName("next-page", "<yellow>Next →"),
                     nextLore));
         }
     }
@@ -152,27 +158,30 @@ public class TopSellGUI implements InventoryHolder {
         meta.setOwningPlayer(op);
 
         // Display name: rank + player name
-        ChatColor rankColour = rankColour(rank);
-        meta.setDisplayName(rankColour + "#" + rank + " " + ChatColor.WHITE + entry.name);
+        String rankColour = rankColour(rank);
+        meta.setDisplayName(Text.legacy(Text.fill(
+                plugin.getConfigManager().getRawText("top-sell.entry-name", "{rank_color}#{rank} <white>{player}"),
+                "rank", rank, "rank_color", rankColour, "player", entry.name)));
 
-        // Lore: total earnings
         List<String> lore = new ArrayList<>();
-        String separator = plugin.getConfigManager().getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
-        lore.add(separator);
-        lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(plugin.getConfigManager().getText("top-sell.total-earned-label", "total earned: "))
-                + ChatColor.GREEN + "$" + NumberFormatter.format(entry.totalEarnings));
-        lore.add(separator);
+        for (String line : plugin.getConfigManager().getRawTextList("top-sell.entry-lore", DEFAULT_ENTRY_LORE)) {
+            lore.add(Text.legacy(Text.fill(line,
+                    "rank", rank, "rank_color", rankColour, "player", entry.name,
+                    "earned", NumberFormatter.format(entry.totalEarnings))));
+        }
         meta.setLore(lore);
 
         skull.setItemMeta(meta);
         return skull;
     }
 
-    private ChatColor rankColour(int rank) {
-        if (rank == 1) return ChatColor.GOLD;
-        if (rank == 2) return ChatColor.GRAY;
-        if (rank == 3) return ChatColor.DARK_RED;
-        return ChatColor.WHITE;
+    /** The colour tag a rank is drawn in, so a server can restyle the podium. */
+    private String rankColour(int rank) {
+        ConfigManager cfg = plugin.getConfigManager();
+        if (rank == 1) return cfg.getRawText("top-sell.rank-color-first", "<gold>");
+        if (rank == 2) return cfg.getRawText("top-sell.rank-color-second", "<gray>");
+        if (rank == 3) return cfg.getRawText("top-sell.rank-color-third", "<dark_red>");
+        return cfg.getRawText("top-sell.rank-color-other", "<white>");
     }
 
     // ── Navigation helpers ───────────────────────────────────────────────────

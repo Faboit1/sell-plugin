@@ -58,6 +58,21 @@ public class EconomyManager {
     }
 
     /**
+     * Whether the configured provider could pay out right now.
+     *
+     * <p>Selling checks this before it takes anything, because once items have
+     * been handed to open orders or removed from the inventory there is nothing
+     * sensible left to roll back to.
+     */
+    public boolean isAvailable() {
+        String economyMode = plugin.getConfig().getString("economy-mode", "VAULT").toUpperCase();
+        if (economyMode.equals("COINSENGINE")) {
+            return Bukkit.getPluginManager().getPlugin("CoinsEngine") != null && getCoinsEngineCurrency() != null;
+        }
+        return vaultEconomy != null;
+    }
+
+    /**
      * Adds money to a player's balance.
      * Returns true if successful.
      */

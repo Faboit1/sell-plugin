@@ -9,6 +9,7 @@ import com.yourname.sellplugin.command.TopSellCommand;
 import com.yourname.sellplugin.command.WorthCommand;
 import com.yourname.sellplugin.economy.EconomyManager;
 import com.yourname.sellplugin.gui.GUIListener;
+import com.yourname.sellplugin.integration.OrderIntegration;
 import com.yourname.sellplugin.listener.WorthPacketListener;
 import com.yourname.sellplugin.listener.WorthRefreshListener;
 import com.yourname.sellplugin.manager.ConfigManager;
@@ -17,6 +18,7 @@ import com.yourname.sellplugin.manager.MultiplierManager;
 import com.yourname.sellplugin.manager.PriceManager;
 import com.yourname.sellplugin.manager.SellManager;
 import com.yourname.sellplugin.manager.WorthVisibilityManager;
+import com.yourname.sellplugin.util.Scheduler;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class SellPlugin extends JavaPlugin {
@@ -28,6 +30,7 @@ public class SellPlugin extends JavaPlugin {
     private SellManager sellManager;
     private WorthVisibilityManager worthVisibilityManager;
     private WorthPacketListener worthPacketListener;
+    private OrderIntegration orderIntegration;
 
     @Override
     public void onEnable() {
@@ -64,6 +67,11 @@ public class SellPlugin extends JavaPlugin {
         worthPacketListener = new WorthPacketListener(this);
         worthPacketListener.register();
 
+        // FoOrders loads independently of us, so bind once the whole server is
+        // up rather than racing its own onEnable.
+        orderIntegration = new OrderIntegration(this);
+        Scheduler.runGlobalLater(this, orderIntegration::bind, 1L);
+
         getLogger().info("SellPlugin has been enabled successfully.");
     }
 
@@ -87,4 +95,5 @@ public class SellPlugin extends JavaPlugin {
     public MultiplierManager getMultiplierManager() { return multiplierManager; }
     public SellManager getSellManager()        { return sellManager; }
     public WorthVisibilityManager getWorthVisibilityManager() { return worthVisibilityManager; }
+    public OrderIntegration getOrderIntegration() { return orderIntegration; }
 }

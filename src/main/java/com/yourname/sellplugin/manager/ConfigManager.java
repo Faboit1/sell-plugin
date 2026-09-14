@@ -128,6 +128,52 @@ public class ConfigManager {
         return color(plugin.getConfig().getString("worth.format", "&7Worth &a&l${worth}"));
     }
 
+    /**
+     * The worth line used when part of the stack would go into an open FoOrders
+     * order instead of the shop. Separate from {@link #getWorthFormat()} so the
+     * value can be marked as an estimate - somebody else may fill the order
+     * first - which is what the default "~" is for.
+     */
+    public String getOrderWorthFormat() {
+        return color(plugin.getConfig().getString("worth.order-format", "&7Worth &a&l~${worth}"));
+    }
+
+    // ---- FoOrders integration --------------------------------------------
+
+    /** Whether selling routes items into open FoOrders orders before the shop. */
+    public boolean isOrderFillingEnabled() {
+        return plugin.getConfig().getBoolean("orders.enabled", true);
+    }
+
+    /**
+     * When true (the default) an order only takes items if it pays at least the
+     * shop price for them, so filling an order never costs the seller money.
+     */
+    public boolean isOrderFillingOnlyWhenBetter() {
+        return plugin.getConfig().getBoolean("orders.only-when-better", true);
+    }
+
+    /**
+     * Whether a player's own orders may be filled by their own selling. Off by
+     * default, matching FoOrders, where the deliver menu refuses your own orders.
+     */
+    public boolean isOwnOrderFillingAllowed() {
+        return plugin.getConfig().getBoolean("orders.include-own-orders", false);
+    }
+
+    /** Whether money earned from orders counts toward category multiplier progress. */
+    public boolean doOrderEarningsCountTowardMultipliers() {
+        return plugin.getConfig().getBoolean("orders.count-toward-multipliers", true);
+    }
+
+    /**
+     * Marker put in front of a money figure that includes order payouts, to show
+     * it is an estimate. Blank to show no marker at all.
+     */
+    public String getOrderEstimateMarker() {
+        return plugin.getConfig().getString("orders.estimate-marker", "~");
+    }
+
     /** Config schema version, used by the auto-migrator. 0 = pre-versioning. */
     public int getConfigVersion() {
         return plugin.getConfig().getInt("config-version", 0);

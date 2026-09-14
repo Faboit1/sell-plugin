@@ -1,6 +1,7 @@
 package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
+import com.yourname.sellplugin.manager.SellManager;
 import com.yourname.sellplugin.manager.ConfigManager;
 import com.yourname.sellplugin.manager.PriceManager;
 import com.yourname.sellplugin.util.ItemNameFormatter;
@@ -141,8 +142,11 @@ public class CategoryItemsGUI implements InventoryHolder {
         }
 
         // ── Sell-All button ────────────────────────────────────────────────
-        double catValue = plugin.getSellManager().calculateCategoryValue(player, categoryId);
+        SellManager.SellPreview catPreview = plugin.getSellManager().previewCategory(player, categoryId);
+        double catValue = catPreview.value;
         int catCount    = plugin.getSellManager().countCategoryItems(player, categoryId);
+        // Marks the figure as an estimate when open orders make up part of it.
+        String catMarker = catPreview.includesOrders ? cfg.getOrderEstimateMarker() : "";
         List<String> sellLore = new ArrayList<>();
         sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-items.category-label", "category: "))
                 + ChatColor.WHITE + ChatColor.stripColor(cfg.getCategoryDisplayName(categoryId)));
@@ -150,7 +154,7 @@ public class CategoryItemsGUI implements InventoryHolder {
             sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-items.items-label", "items: "))
                     + ChatColor.WHITE + NumberFormatter.format(catCount));
             sellLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("category-items.earn-label", "earn: "))
-                    + ChatColor.GREEN + "$" + NumberFormatter.format(catValue));
+                    + ChatColor.GREEN + catMarker + "$" + NumberFormatter.format(catValue));
         } else {
             sellLore.add(ChatColor.RED + " ▸ " + SmallCaps.convert(cfg.getText("category-items.no-items-to-sell", "no items to sell.")));
         }

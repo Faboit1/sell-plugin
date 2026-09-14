@@ -2,6 +2,7 @@ package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
 import com.yourname.sellplugin.manager.ConfigManager;
+import com.yourname.sellplugin.manager.SellManager;
 import com.yourname.sellplugin.util.NumberFormatter;
 import com.yourname.sellplugin.util.SmallCaps;
 import org.bukkit.Bukkit;
@@ -55,8 +56,11 @@ public class ConfirmSellGUI implements InventoryHolder {
         for (int i = 0; i < SIZE; i++) inv.setItem(i, bg);
 
         // Category info in centre (slot 13)
-        double value = plugin.getSellManager().calculateCategoryValue(player, categoryId);
+        SellManager.SellPreview preview = plugin.getSellManager().previewCategory(player, categoryId);
+        double value = preview.value;
         int itemCount = plugin.getSellManager().countCategoryItems(player, categoryId);
+        // Marks the figure as an estimate when open orders make up part of it.
+        String marker = preview.includesOrders ? cfg.getOrderEstimateMarker() : "";
 
         String separator = cfg.getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
         List<String> infoLore = new ArrayList<>();
@@ -64,7 +68,7 @@ public class ConfirmSellGUI implements InventoryHolder {
         infoLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell.items-label", "items: "))
                 + ChatColor.WHITE + NumberFormatter.format(itemCount));
         infoLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell.value-label", "value: "))
-                + ChatColor.GREEN + "$" + NumberFormatter.format(value));
+                + ChatColor.GREEN + marker + "$" + NumberFormatter.format(value));
         infoLore.add(separator);
 
         inv.setItem(13, makeItem(cfg.getCategoryMaterial(categoryId),
@@ -77,7 +81,7 @@ public class ConfirmSellGUI implements InventoryHolder {
                 + ChatColor.GRAY + SmallCaps.convert(cfg.getText("confirm-sell.confirm-lore-line2", " items")));
         confirmLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell.confirm-lore-line3", "from your inventory.")));
         if (itemCount > 0) {
-            confirmLore.add(ChatColor.GREEN + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell.confirm-earn", "you will earn: $")) + NumberFormatter.format(value));
+            confirmLore.add(ChatColor.GREEN + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell.confirm-earn", "you will earn: $")) + marker + NumberFormatter.format(value));
         }
         inv.setItem(SLOT_CONFIRM, makeItem(
                 cfg.getIconMaterial("confirm", Material.LIME_STAINED_GLASS_PANE),

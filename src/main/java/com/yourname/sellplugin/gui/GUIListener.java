@@ -289,70 +289,63 @@ public class GUIListener implements Listener {
         }
     }
 
-    // ── Sell items placed in the ShopMainGUI (via button click) ─────────────
+    // ── Sell items placed in the ShopMainGUI ────────────────────────────────
 
+    /**
+     * Sells everything sitting in the GUI's placement area and hands back what
+     * nobody wanted.
+     *
+     * <p>Open FoOrders orders get first refusal on each stack, so a stack can be
+     * split: the part an order took leaves (FoOrders pays for it directly), the
+     * part the shop buys leaves too, and anything left over goes back to the
+     * player. An item the shop does not buy can still be taken by an order.
+     */
     private void sellGuiItems(Player player, ShopMainGUI shopGUI) {
         Inventory top = shopGUI.getInventory();
         SellPlugin pl = shopGUI.getPlugin();
 
-        double totalEarned = 0.0;
-        int totalItems = 0;
-        Map<String, Double> categoryEarnings = new HashMap<>();
-        List<ItemStack> sellableItems = new ArrayList<>();
-        List<ItemStack> nonSellableItems = new ArrayList<>();
+        // Checked before anything moves: once items have gone to orders or left
+        // the GUI there is nothing to roll back to if the payout then fails.
+        if (!pl.getEconomyManager().isAvailable()) {
+            player.sendMessage(pl.getConfigManager().getMessage("economy-error"));
+            return;
+        }
+
+        SellManager.SaleTally tally = new SellManager.SaleTally();
+        List<ItemStack> toReturn = new ArrayList<>();
 
         for (int i = 0; i < ShopMainGUI.ITEM_AREA_END; i++) {
             ItemStack item = top.getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
-            // Shulker box: sell its contents, return the shulker
+            top.setItem(i, null);
+
+            // Shulker box: sell its contents, hand the box itself back.
             if (SellManager.isShulkerBox(item)) {
-                SellManager.ShulkerSellData data = pl.getSellManager().sellShulkerContents(player, item, null, null);
-                totalEarned += data.earned;
-                totalItems += data.items;
-                data.categoryEarnings.forEach((cat, val) -> categoryEarnings.merge(cat, val, Double::sum));
-                nonSellableItems.add(item); // return shulker box
-                top.setItem(i, null);
+                tally.add(pl.getSellManager().sellShulkerContents(player, item, null, null));
+                toReturn.add(item);
                 continue;
             }
 
             String key = pl.getPriceManager().getItemKey(item);
-            if (key == null || pl.getPriceManager().getPrice(key) <= 0) {
-                nonSellableItems.add(item);
-                top.setItem(i, null);
-                continue;
-            }
+            SellManager.StackSale sale = key == null
+                    ? SellManager.StackSale.NONE
+                    : pl.getSellManager().valueStack(player, item, key, true, null);
+            tally.add(sale);
 
-            double base = pl.getPriceManager().getPrice(key);
-            String cat = pl.getPriceManager().getCategory(key);
-            double mult = pl.getMultiplierManager().getEffectiveMultiplier(player, cat);
-            int amount = item.getAmount();
-            double earned = pl.getSellManager().enchantedUnitPrice(item, base) * mult * amount;
-            totalEarned += earned;
-            totalItems += amount;
-            categoryEarnings.merge(cat, earned, Double::sum);
-            sellableItems.add(item);
-            top.setItem(i, null);
+            int leftOver = item.getAmount() - sale.unitsConsumed();
+            if (leftOver > 0) {
+                ItemStack remainder = item.clone();
+                remainder.setAmount(leftOver);
+                toReturn.add(remainder);
+            }
         }
 
-        for (ItemStack item : nonSellableItems) {
+        for (ItemStack item : toReturn) {
             returnItem(player, item);
         }
 
-        if (totalEarned > 0) {
-            boolean ok = pl.getEconomyManager().deposit(player, totalEarned);
-            if (ok) {
-                for (Map.Entry<String, Double> entry : categoryEarnings.entrySet()) {
-                    pl.getMultiplierManager().addEarnings(player, entry.getKey(), entry.getValue());
-                }
-                pl.getSellManager().sendSellNotification(player, totalEarned, totalItems);
-            } else {
-                player.sendMessage(pl.getConfigManager().getMessage("economy-error"));
-                for (ItemStack item : sellableItems) {
-                    returnItem(player, item);
-                }
-            }
-        }
+        depositSale(player, pl, tally);
 
         // Refresh the sell button after selling
         shopGUI.refreshSellButton();
@@ -367,65 +360,19 @@ public class GUIListener implements Listener {
         InventoryHolder holder = e.getView().getTopInventory().getHolder();
         if (!(holder instanceof ShopMainGUI shopGUI)) return;
 
-        Inventory top = e.getView().getTopInventory();
-        SellPlugin pl = shopGUI.getPlugin();
+        sellGuiItems(player, shopGUI);
+    }
 
-        double totalEarned = 0.0;
-        int totalItems = 0;
-        Map<String, Double> categoryEarnings = new HashMap<>();
-        List<ItemStack> sellableItems = new ArrayList<>();
-        List<ItemStack> nonSellableItems = new ArrayList<>();
-
-        for (int i = 0; i < ShopMainGUI.ITEM_AREA_END; i++) {
-            ItemStack item = top.getItem(i);
-            if (item == null || item.getType() == Material.AIR) continue;
-
-            // Shulker box: sell its contents, return the (now empty/partially-empty) shulker
-            if (SellManager.isShulkerBox(item)) {
-                SellManager.ShulkerSellData data = pl.getSellManager().sellShulkerContents(player, item, null, null);
-                totalEarned += data.earned;
-                totalItems += data.items;
-                data.categoryEarnings.forEach((cat, val) -> categoryEarnings.merge(cat, val, Double::sum));
-                // Return the shulker box (now with sold items removed) to the player
-                returnItem(player, item);
-                continue;
-            }
-
-            String key = pl.getPriceManager().getItemKey(item);
-            if (key == null || pl.getPriceManager().getPrice(key) <= 0) {
-                nonSellableItems.add(item);
-                continue;
-            }
-
-            double base = pl.getPriceManager().getPrice(key);
-            String cat = pl.getPriceManager().getCategory(key);
-            double mult = pl.getMultiplierManager().getEffectiveMultiplier(player, cat);
-            int amount = item.getAmount();
-            double earned = pl.getSellManager().enchantedUnitPrice(item, base) * mult * amount;
-            totalEarned += earned;
-            totalItems += amount;
-            categoryEarnings.merge(cat, earned, Double::sum);
-            sellableItems.add(item);
+    /**
+     * Pays out the shop's half of a sale and records the earnings. FoOrders has
+     * already paid the seller for whatever the orders took, which is why a failed
+     * deposit here cannot simply return every item.
+     */
+    private void depositSale(Player player, SellPlugin pl, SellManager.SaleTally tally) {
+        if (tally.totalEarned() <= 0) {
+            return;
         }
-
-        for (ItemStack item : nonSellableItems) {
-            returnItem(player, item);
-        }
-
-        if (totalEarned > 0) {
-            boolean ok = pl.getEconomyManager().deposit(player, totalEarned);
-            if (ok) {
-                for (Map.Entry<String, Double> entry : categoryEarnings.entrySet()) {
-                    pl.getMultiplierManager().addEarnings(player, entry.getKey(), entry.getValue());
-                }
-                pl.getSellManager().sendSellNotification(player, totalEarned, totalItems);
-            } else {
-                player.sendMessage(pl.getConfigManager().getMessage("economy-error"));
-                for (ItemStack item : sellableItems) {
-                    returnItem(player, item);
-                }
-            }
-        }
+        pl.getSellManager().completeSale(player, tally);
     }
 
     private void returnItem(Player player, ItemStack item) {

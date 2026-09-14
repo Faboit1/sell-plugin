@@ -1,7 +1,9 @@
 package com.yourname.sellplugin.gui;
 
 import com.yourname.sellplugin.SellPlugin;
+import com.yourname.sellplugin.integration.OrderQuoteLedger;
 import com.yourname.sellplugin.manager.ConfigManager;
+import com.yourname.sellplugin.manager.SellManager;
 import com.yourname.sellplugin.util.NumberFormatter;
 import com.yourname.sellplugin.util.SmallCaps;
 import org.bukkit.Bukkit;
@@ -77,8 +79,11 @@ public class ShopMainGUI implements InventoryHolder {
     private ItemStack buildSellButton() {
         ConfigManager cfg = plugin.getConfigManager();
 
-        // Calculate the value of items currently in the GUI
-        double totalValue = calculateGuiItemsValue();
+        // What the items in the GUI are actually worth, open orders included, so
+        // the button agrees with what clicking it pays out.
+        SellManager.SaleTally tally = valueGuiItems();
+        double totalValue = tally.totalEarned();
+        String marker = tally.usedOrders() ? cfg.getOrderEstimateMarker() : "";
 
         String separator = cfg.getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
 
@@ -86,7 +91,7 @@ public class ShopMainGUI implements InventoryHolder {
         lore.add(separator);
         if (totalValue > 0) {
             lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("shop.sell-value-label", "value: "))
-                    + ChatColor.GREEN + "$" + NumberFormatter.format(totalValue));
+                    + ChatColor.GREEN + marker + "$" + NumberFormatter.format(totalValue));
         } else {
             lore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("shop.sell-empty", "no sellable items")));
         }
@@ -100,16 +105,23 @@ public class ShopMainGUI implements InventoryHolder {
     }
 
     /**
-     * Calculate the total sell value of all items currently placed in the GUI.
+     * What everything currently placed in the GUI would fetch. One ledger spans
+     * the whole area so an order that several stacks match is only counted once.
      */
-    public double calculateGuiItemsValue() {
-        double totalValue = 0.0;
+    public SellManager.SaleTally valueGuiItems() {
+        SellManager.SaleTally tally = new SellManager.SaleTally();
+        OrderQuoteLedger ledger = plugin.getSellManager().newLedger(player);
         for (int i = 0; i < ITEM_AREA_END; i++) {
             ItemStack item = inv.getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
-            totalValue += plugin.getSellManager().calculateItemWorth(player, item);
+            tally.add(plugin.getSellManager().evaluateItemWorth(player, item, ledger));
         }
-        return totalValue;
+        return tally;
+    }
+
+    /** Total sell value of everything placed in the GUI, orders included. */
+    public double calculateGuiItemsValue() {
+        return valueGuiItems().totalEarned();
     }
 
     private ItemStack makeItem(Material mat, String name, List<String> lore) {

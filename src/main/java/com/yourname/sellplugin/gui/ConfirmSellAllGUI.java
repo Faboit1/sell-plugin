@@ -49,6 +49,8 @@ public class ConfirmSellAllGUI implements InventoryHolder {
         SellManager.SellPreview preview = plugin.getSellManager().previewSellAll(player);
         int itemCount = preview.itemCount;
         double value   = preview.value;
+        // Marks the figure as an estimate when open orders make up part of it.
+        String marker  = preview.includesOrders ? cfg.getOrderEstimateMarker() : "";
 
         String separator = cfg.getText("lore-separator", "&8━━━━━━━━━━━━━━━━━━━");
         List<String> infoLore = new ArrayList<>();
@@ -56,7 +58,7 @@ public class ConfirmSellAllGUI implements InventoryHolder {
         infoLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell-all.items-label", "items: "))
                 + ChatColor.WHITE + NumberFormatter.format(itemCount));
         infoLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell-all.value-label", "value: "))
-                + ChatColor.GREEN + "$" + NumberFormatter.format(value));
+                + ChatColor.GREEN + marker + "$" + NumberFormatter.format(value));
         infoLore.add(separator);
 
         inv.setItem(13, makeItem(
@@ -68,7 +70,7 @@ public class ConfirmSellAllGUI implements InventoryHolder {
         List<String> confirmLore = new ArrayList<>();
         confirmLore.add(ChatColor.GRAY + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell-all.confirm-lore", "sell all items from your inventory.")));
         if (itemCount > 0) {
-            confirmLore.add(ChatColor.GREEN + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell-all.confirm-earn", "you will earn: $")) + NumberFormatter.format(value));
+            confirmLore.add(ChatColor.GREEN + " ▸ " + SmallCaps.convert(cfg.getText("confirm-sell-all.confirm-earn", "you will earn: $")) + marker + NumberFormatter.format(value));
         }
         inv.setItem(SLOT_CONFIRM, makeItem(
                 cfg.getIconMaterial("confirm", Material.LIME_STAINED_GLASS_PANE),

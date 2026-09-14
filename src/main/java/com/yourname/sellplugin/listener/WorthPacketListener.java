@@ -15,6 +15,7 @@ import com.yourname.sellplugin.gui.ConfirmSellGUI;
 import com.yourname.sellplugin.gui.SellAllGUI;
 import com.yourname.sellplugin.gui.ShopMainGUI;
 import com.yourname.sellplugin.gui.TopSellGUI;
+import com.yourname.sellplugin.manager.SellManager;
 import com.yourname.sellplugin.util.NumberFormatter;
 import org.bukkit.GameMode;
 import org.bukkit.block.DoubleChest;
@@ -48,11 +49,6 @@ public class WorthPacketListener {
     }
 
     public void register() {
-        if (plugin.getServer().getPluginManager().getPlugin("ProtocolLib") == null) {
-            plugin.getLogger().warning("ProtocolLib not found; sell worth tooltips are disabled.");
-            return;
-        }
-
         ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
         packetListener = new PacketAdapter(plugin, ListenerPriority.NORMAL,
                 PacketType.Play.Server.SET_SLOT,
@@ -177,7 +173,13 @@ public class WorthPacketListener {
     private ItemStack addWorthLore(Player player, ItemStack original) {
         if (original == null || original.getType().isAir()) return original;
 
-        double worth = plugin.getSellManager().calculateItemWorth(player, original);
+        // Open FoOrders orders are worth more than the shop, so the tooltip has
+        // to price them in - otherwise a player sees one figure on the item and
+        // is paid another. The figure is an estimate, because somebody else may
+        // fill that order first, which is what the separate order format marks.
+        SellManager.StackSale sale = plugin.getSellManager().evaluateItemWorth(player, original, null);
+        double worth = sale.totalEarned();
+        boolean fromOrders = sale.usedOrders();
 
         ItemMeta meta = original.getItemMeta();
         boolean hadWorthLine = meta != null && meta.hasLore() && loreHasWorthLine(meta.getLore());
@@ -198,8 +200,10 @@ public class WorthPacketListener {
             if (!lore.isEmpty() && !isBlank(lore.get(lore.size() - 1))) {
                 lore.add("");
             }
-            lore.add(WORTH_MARKER + plugin.getConfigManager().getWorthFormat()
-                    .replace("{worth}", NumberFormatter.format(worth)));
+            String format = fromOrders
+                    ? plugin.getConfigManager().getOrderWorthFormat()
+                    : plugin.getConfigManager().getWorthFormat();
+            lore.add(WORTH_MARKER + format.replace("{worth}", NumberFormatter.format(worth)));
         }
 
         meta.setLore(lore.isEmpty() ? null : lore);

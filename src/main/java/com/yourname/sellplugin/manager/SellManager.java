@@ -70,7 +70,8 @@ public class SellManager {
         }
 
         double shopEarned = shopUnitPrice * (amount - claim.units);
-        return new StackSale(category, amount, shopBuys, shopEarned, claim.units, claim.value);
+        return new StackSale(category, amount, shopBuys, shopEarned, claim.units, claim.value,
+                shopUnitPrice * claim.units);
     }
 
     private OrderClaim claimOrders(Player player, ItemStack item, int amount, double shopUnitPrice,
@@ -500,15 +501,23 @@ public class SellManager {
         public final int orderUnits;
         /** Paid by FoOrders when committing, or projected when previewing. */
         public final double orderEarned;
+        /** What the shop would have paid for the units the orders took. */
+        public final double orderShopValue;
 
         public StackSale(String category, int stackAmount, boolean shopBuys,
                          double shopEarned, int orderUnits, double orderEarned) {
+            this(category, stackAmount, shopBuys, shopEarned, orderUnits, orderEarned, 0.0);
+        }
+
+        public StackSale(String category, int stackAmount, boolean shopBuys,
+                         double shopEarned, int orderUnits, double orderEarned, double orderShopValue) {
             this.category = category;
             this.stackAmount = stackAmount;
             this.shopBuys = shopBuys;
             this.shopEarned = shopEarned;
             this.orderUnits = orderUnits;
             this.orderEarned = orderEarned;
+            this.orderShopValue = orderShopValue;
         }
 
         public double totalEarned() {
@@ -552,8 +561,14 @@ public class SellManager {
             orderUnits += sale.orderUnits;
             if (sale.category != null) {
                 categoryEarnings.merge(sale.category, sale.shopEarned, Double::sum);
-                if (sale.orderEarned > 0) {
-                    categoryOrderEarnings.merge(sale.category, sale.orderEarned, Double::sum);
+                // Counted at most at what the shop would have paid for those
+                // units. An order's price is whatever its owner typed, so
+                // counting it in full would let two accounts pass money back
+                // and forth through an overpriced order and raise a multiplier
+                // as far as they like without selling anything of real worth.
+                double countable = Math.min(sale.orderEarned, sale.orderShopValue);
+                if (countable > 0) {
+                    categoryOrderEarnings.merge(sale.category, countable, Double::sum);
                 }
             }
         }

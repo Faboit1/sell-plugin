@@ -141,6 +141,8 @@ orders:
   # default, matching FoOrders, where you cannot deliver to your own order.
   include-own-orders: false
   # Count order payouts toward category multiplier progress, like shop sales.
+  # Each sale counts for no more than the shop would have paid for it, so an
+  # overpriced order cannot be used to push a multiplier up.
   count-toward-multipliers: true
   # Put in front of any money figure that includes order payouts, marking it as
   # an estimate. Leave blank for no marker.

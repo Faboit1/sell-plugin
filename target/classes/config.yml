@@ -13,7 +13,7 @@
 # auto-migrate old configs (adding any new options you're missing) and it makes
 # a timestamped backup of your old file first. If this key is missing the plugin
 # assumes an old config and migrates anyway.
-config-version: 3
+config-version: 4
 
 # ---- Feature toggles --------------------------------------- #
 # Turn any major part of the plugin on or off. Everything defaults to on.
@@ -165,7 +165,7 @@ sell-axe:
   material: NETHERITE_AXE
   custom-model-data: 3003
   glint: true
-  name: "<#D580FF>Sell Axe"
+  name: "<#D580FF>Shard Sell Axe"
   lore:
     - "<#AAAAAA>Sells chests, barrels and shulker boxes"
   # How long a newly given axe lasts before it self destructs, like the Shard
@@ -184,6 +184,13 @@ sell-axe:
   # Log every sale to the console, since removing items this way is not seen by
   # CoreProtect's container logging.
   log-sales: true
+
+# Items carrying any of these custom model data values are never sold, by any
+# command, the sell menu or the sell axe. 3001 is the Shard Pickaxe and 3002
+# the Shard Axe: both are netherite, which the shop would otherwise buy.
+unsellable-custom-model-data:
+  - 3001
+  - 3002
 
 # ---- Menu text ---------------------------------------------- #
 # Every title, button name and lore line lives under "messages" near the
@@ -363,11 +370,11 @@ messages:
   # ── Sell axe ──────────────────────────────────────────────────
   sell-axe:
     protected: "<red>You can't sell from that container."
-    destroyed: "<red>Your Sell Axe has self destructed."
+    destroyed: "<red>Your Shard Sell Axe has self destructed."
     usage: "<red>Usage: /sellaxe give <player> [duration|permanent]"
     player-not-found: "<red>Player not found."
     bad-duration: "<red>Unknown duration. Try 3d, 12h, 1d12h or permanent."
-    given: "<green>You gave a Sell Axe to <white>{player}</white> <gray>({time})"
+    given: "<green>You gave a Shard Sell Axe to <white>{player}</white> <gray>({time})"
 
   # ── Commands / console messages ───────────────────────────────
   player-only-command: "<red>Only players can use this command."

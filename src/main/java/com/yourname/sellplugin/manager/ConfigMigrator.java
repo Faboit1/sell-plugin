@@ -35,7 +35,7 @@ import java.util.Map;
 public class ConfigMigrator {
 
     /** Bump this whenever the bundled config.yml gains or drops options. */
-    public static final int CURRENT_VERSION = 3;
+    public static final int CURRENT_VERSION = 4;
 
     /** Keys that used to exist but have been removed from the plugin. */
     private static final List<String> OBSOLETE_KEYS = List.of(
@@ -110,7 +110,11 @@ public class ConfigMigrator {
             Map.entry("messages.top-sell.total-players", "total players: "),
             Map.entry("messages.top-sell.page-indicator", "page {page} / {total}"),
             Map.entry("worth.format", "&7Worth &a&l${worth}"),
-            Map.entry("worth.order-format", "&7Worth &a&l~${worth}")
+            Map.entry("worth.order-format", "&7Worth &a&l~${worth}"),
+            // The sell axe shipped as "Sell Axe" before it joined the Shard tools.
+            Map.entry("sell-axe.name", "<#D580FF>Sell Axe"),
+            Map.entry("messages.sell-axe.destroyed", "<red>Your Sell Axe has self destructed."),
+            Map.entry("messages.sell-axe.given", "<green>You gave a Sell Axe to <white>{player}</white> <gray>({time})")
     );
 
     private final SellPlugin plugin;

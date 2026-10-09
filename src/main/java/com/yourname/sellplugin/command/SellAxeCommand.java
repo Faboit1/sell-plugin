@@ -66,7 +66,7 @@ public class SellAxeCommand implements TabExecutor {
         });
 
         String time = lifetime > 0 ? SellAxe.remainingLabel(lifetime) : "permanent";
-        sender.sendMessage(message("given", "<green>You gave a Sell Axe to <white>{player}</white> <gray>({time})")
+        sender.sendMessage(message("given", "<green>You gave a Shard Sell Axe to <white>{player}</white> <gray>({time})")
                 .replace("{player}", target.getName())
                 .replace("{time}", time));
         return true;

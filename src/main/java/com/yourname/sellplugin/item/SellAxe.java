@@ -94,7 +94,7 @@ public final class SellAxe {
         int modelData = plugin.getConfig().getInt("sell-axe.custom-model-data", 3003);
         if (modelData > 0) meta.setCustomModelData(modelData);
 
-        meta.displayName(line(plugin.getConfig().getString("sell-axe.name", "<#D580FF>Sell Axe")));
+        meta.displayName(line(plugin.getConfig().getString("sell-axe.name", "<#D580FF>Shard Sell Axe")));
 
         List<Component> lore = new ArrayList<>();
         for (String raw : configuredLore()) lore.add(line(raw));
@@ -187,7 +187,7 @@ public final class SellAxe {
     public void announceDestroyed(Player player) {
         player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 1f);
         player.sendMessage(Text.legacy(plugin.getConfig().getString(
-                "messages.sell-axe.destroyed", "<red>Your Sell Axe has self destructed.")));
+                "messages.sell-axe.destroyed", "<red>Your Shard Sell Axe has self destructed.")));
     }
 
     // ---------------------------------------------------------------

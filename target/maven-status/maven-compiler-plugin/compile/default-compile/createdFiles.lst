@@ -28,14 +28,17 @@ com/yourname/sellplugin/util/Text.class
 com/yourname/sellplugin/SellPlugin.class
 com/yourname/sellplugin/gui/CategoryItemsGUI.class
 com/yourname/sellplugin/gui/GUIListener.class
+com/yourname/sellplugin/listener/SellAxeListener.class
 com/yourname/sellplugin/util/ItemNameFormatter.class
 com/yourname/sellplugin/manager/ConfigManager.class
 com/yourname/sellplugin/listener/WorthPacketListener$3.class
 com/yourname/sellplugin/manager/SellManager$SaleTally.class
 com/yourname/sellplugin/gui/ShopMainGUI.class
+com/yourname/sellplugin/command/SellAxeCommand.class
 com/yourname/sellplugin/manager/PriceManager.class
 com/yourname/sellplugin/manager/SellManager$SlotWriter.class
 com/yourname/sellplugin/command/TopSellCommand.class
+com/yourname/sellplugin/item/SellAxe.class
 com/yourname/sellplugin/integration/OrderIntegration$QuoteKey.class
 com/yourname/sellplugin/manager/SellManager$OrderClaim.class
 com/yourname/sellplugin/command/ShowWorthCommand.class

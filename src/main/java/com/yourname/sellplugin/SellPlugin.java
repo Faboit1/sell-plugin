@@ -1,6 +1,7 @@
 package com.yourname.sellplugin;
 
 import com.yourname.sellplugin.command.SellAllCommand;
+import com.yourname.sellplugin.command.SellAxeCommand;
 import com.yourname.sellplugin.command.SellCommand;
 import com.yourname.sellplugin.command.SellMultiCommand;
 import com.yourname.sellplugin.command.FastSellAllCommand;
@@ -11,6 +12,8 @@ import com.yourname.sellplugin.dialog.WorthDialogService;
 import com.yourname.sellplugin.economy.EconomyManager;
 import com.yourname.sellplugin.gui.GUIListener;
 import com.yourname.sellplugin.integration.OrderIntegration;
+import com.yourname.sellplugin.item.SellAxe;
+import com.yourname.sellplugin.listener.SellAxeListener;
 import com.yourname.sellplugin.listener.WorthPacketListener;
 import com.yourname.sellplugin.listener.WorthRefreshListener;
 import com.yourname.sellplugin.manager.ConfigManager;
@@ -70,6 +73,13 @@ public class SellPlugin extends JavaPlugin {
         getCommand("showworth").setTabCompleter(showWorthCommand);
         getServer().getPluginManager().registerEvents(new GUIListener(this), this);
         getServer().getPluginManager().registerEvents(new WorthRefreshListener(this), this);
+
+        SellAxe sellAxe = new SellAxe(this);
+        SellAxeCommand sellAxeCommand = new SellAxeCommand(this, sellAxe);
+        getCommand("sellaxe").setExecutor(sellAxeCommand);
+        getCommand("sellaxe").setTabCompleter(sellAxeCommand);
+        getServer().getPluginManager().registerEvents(new SellAxeListener(this, sellAxe), this);
+        sellAxe.startSweeper();
 
         // Checked before the listener is even constructed: its fields and methods
         // are typed against ProtocolLib, so loading the class at all throws

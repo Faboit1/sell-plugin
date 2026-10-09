@@ -35,7 +35,7 @@ import java.util.Map;
 public class ConfigMigrator {
 
     /** Bump this whenever the bundled config.yml gains or drops options. */
-    public static final int CURRENT_VERSION = 2;
+    public static final int CURRENT_VERSION = 3;
 
     /** Keys that used to exist but have been removed from the plugin. */
     private static final List<String> OBSOLETE_KEYS = List.of(
@@ -163,6 +163,10 @@ public class ConfigMigrator {
         // Stamp the new version and persist.
         config.set("config-version", CURRENT_VERSION);
         plugin.saveConfig();
+        // copyDefaults only writes the new options out when saving; the loaded
+        // config still lacks them, so a lookup with its own fallback would miss
+        // them until the next restart. Read the merged file back in.
+        plugin.reloadConfig();
 
         plugin.getLogger().info("Config migration complete. A backup of your old "
                 + "config was saved in the plugin folder.");

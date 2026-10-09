@@ -1,6 +1,7 @@
 package com.yourname.sellplugin.manager;
 
 import com.yourname.sellplugin.SellPlugin;
+import com.yourname.sellplugin.item.SellAxe;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -50,6 +51,8 @@ public class PriceManager {
     // Identifies the string key from the ItemStack
     public String getItemKey(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return null;
+        // The sell axe is a tool, not stock: never sell it or show it a worth.
+        if (SellAxe.isSellAxe(item)) return null;
 
         String key = item.getType().name();
         ItemMeta meta = item.getItemMeta();

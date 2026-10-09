@@ -34,6 +34,10 @@ commands:
     description: Instantly sells all sellable items without opening a GUI.
     usage: /fastsellall
     permission: sellplugin.use
+  sellaxe:
+    description: Gives a sell axe, which sells the contents of chests, barrels and shulker boxes.
+    usage: /sellaxe give <player> [duration|permanent]
+    permission: sellplugin.sellaxe.give
 
   topsell:
     description: Opens the top sellers leaderboard.
@@ -48,6 +52,12 @@ permissions:
   sellplugin.topsell:
     description: Allows a player to view the top sellers leaderboard.
     default: true
+  sellplugin.sellaxe.use:
+    description: Allows a player to sell containers with a sell axe.
+    default: true
+  sellplugin.sellaxe.give:
+    description: Allows giving sell axes with /sellaxe give.
+    default: op
   sellplugin.reload:
     description: Allows a player to reload the plugin configuration.
     default: op

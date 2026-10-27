@@ -2,12 +2,14 @@
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/command/ShowWorthCommand.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/command/TopSellCommand.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/gui/ConfirmSellAllGUI.java
+/home/user/sell-plugin/src/main/java/com/yourname/sellplugin/item/SellAxe.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/gui/CategoryProgressGUI.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/command/FastSellAllCommand.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/manager/ConfigMigrator.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/listener/WorthPacketListener.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/dialog/WorthDialogService.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/integration/OrderQuoteLedger.java
+/home/user/sell-plugin/src/main/java/com/yourname/sellplugin/listener/SellAxeListener.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/manager/MultiplierManager.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/command/SellCommand.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/integration/OrderIntegration.java
@@ -31,3 +33,4 @@
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/command/SellAllCommand.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/gui/ShopMainGUI.java
 /home/user/sell-plugin/src/main/java/com/yourname/sellplugin/gui/TopSellGUI.java
+/home/user/sell-plugin/src/main/java/com/yourname/sellplugin/command/SellAxeCommand.java

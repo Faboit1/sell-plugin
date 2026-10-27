@@ -1,6 +1,7 @@
 package com.yourname.sellplugin.manager;
 
 import com.yourname.sellplugin.SellPlugin;
+import com.yourname.sellplugin.item.SellAxe;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -17,6 +18,8 @@ public class PriceManager {
     private final Map<String, Double> prices = new HashMap<>();
     private final Map<String, String> itemCategories = new HashMap<>();
     private final Set<String> categories = new java.util.HashSet<>();
+    /** Custom model data values whose items are never sold, such as the Shard tools. */
+    private final Set<Integer> unsellableModelData = new java.util.HashSet<>();
 
     public PriceManager(SellPlugin plugin) {
         this.plugin = plugin;
@@ -26,6 +29,8 @@ public class PriceManager {
         prices.clear();
         itemCategories.clear();
         categories.clear();
+        unsellableModelData.clear();
+        unsellableModelData.addAll(plugin.getConfig().getIntegerList("unsellable-custom-model-data"));
 
         File file = new File(plugin.getDataFolder(), "price.yml");
         if (!file.exists()) {
@@ -50,9 +55,18 @@ public class PriceManager {
     // Identifies the string key from the ItemStack
     public String getItemKey(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return null;
+        // The sell axe is a tool, not stock: never sell it or show it a worth.
+        if (SellAxe.isSellAxe(item)) return null;
 
         String key = item.getType().name();
         ItemMeta meta = item.getItemMeta();
+
+        // Custom tools such as the Shard Axe and Shard Pickaxe are made from
+        // ordinary netherite, which the shop would otherwise buy.
+        if (!unsellableModelData.isEmpty() && meta != null && meta.hasCustomModelData()
+                && unsellableModelData.contains(meta.getCustomModelData())) {
+            return null;
+        }
 
         // Check for Potions to match your config layout (LINGERING_POTION:NIGHT_VISION)
         if (meta instanceof PotionMeta) {

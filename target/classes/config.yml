@@ -13,7 +13,7 @@
 # auto-migrate old configs (adding any new options you're missing) and it makes
 # a timestamped backup of your old file first. If this key is missing the plugin
 # assumes an old config and migrates anyway.
-config-version: 2
+config-version: 4
 
 # ---- Feature toggles --------------------------------------- #
 # Turn any major part of the plugin on or off. Everything defaults to on.
@@ -147,6 +147,50 @@ orders:
   # Put in front of any money figure that includes order payouts, marking it as
   # an estimate. Leave blank for no marker.
   estimate-marker: "~"
+
+# ---- Sell axe ------------------------------------------------ #
+# Right-click a chest, trapped chest, barrel or placed shulker box with the sell
+# axe to sell everything sellable inside it, including the contents of shulker
+# boxes stored in the chest or barrel. Unsellable items stay where they were.
+# Containers the player could not open by hand (WorldGuard, claims, lock
+# plugins) are refused. Give one with: /sellaxe give <player> [duration|permanent]
+sell-axe:
+  enabled: true
+  # Sneak + right-click instead of a plain right-click. Off: right-clicking a
+  # container with the axe always sells it rather than opening it.
+  require-sneak: false
+  # Item the axe is made from, and its custom model data (the Shard Pickaxe is
+  # 3001 and the Shard Axe 3002). Changing these only affects newly given axes;
+  # axes already handed out are still recognised.
+  material: NETHERITE_AXE
+  custom-model-data: 3003
+  glint: true
+  name: "<#D580FF>Shard Sell Axe"
+  lore:
+    - "<#AAAAAA>Sells chests, barrels and shulker boxes"
+  # How long a newly given axe lasts before it self destructs, like the Shard
+  # tools: e.g. 3d, 12h, 1d12h. "permanent" for one that never does. A duration
+  # given in /sellaxe give overrides this.
+  lifetime: "3d"
+  # Added under the lore while the axe has a self destruct time. {time} is the
+  # countdown, e.g. "2d 14h 11m".
+  expiry-lore:
+    - "<#FF5555>Self Destruct:"
+    - "<white>{time}"
+  # Milliseconds between two uses by the same player.
+  cooldown-ms: 500
+  # Amethyst chime and dust at the container on a sale.
+  effects: true
+  # Log every sale to the console, since removing items this way is not seen by
+  # CoreProtect's container logging.
+  log-sales: true
+
+# Items carrying any of these custom model data values are never sold, by any
+# command, the sell menu or the sell axe. 3001 is the Shard Pickaxe and 3002
+# the Shard Axe: both are netherite, which the shop would otherwise buy.
+unsellable-custom-model-data:
+  - 3001
+  - 3002
 
 # ---- Menu text ---------------------------------------------- #
 # Every title, button name and lore line lives under "messages" near the
@@ -320,6 +364,17 @@ messages:
   economy-error: "<red>An economy error occurred. Please contact an admin."
   # Shown when a player uses a command for a feature that's toggled off.
   feature-disabled: "<red>This feature is currently disabled."
+  # Shown when a sell axe finds nothing sellable in a container.
+  nothing-in-container: "<red>There is nothing sellable in there."
+
+  # ── Sell axe ──────────────────────────────────────────────────
+  sell-axe:
+    protected: "<red>You can't sell from that container."
+    destroyed: "<red>Your Shard Sell Axe has self destructed."
+    usage: "<red>Usage: /sellaxe give <player> [duration|permanent]"
+    player-not-found: "<red>Player not found."
+    bad-duration: "<red>Unknown duration. Try 3d, 12h, 1d12h or permanent."
+    given: "<green>You gave a Shard Sell Axe to <white>{player}</white> <gray>({time})"
 
   # ── Commands / console messages ───────────────────────────────
   player-only-command: "<red>Only players can use this command."

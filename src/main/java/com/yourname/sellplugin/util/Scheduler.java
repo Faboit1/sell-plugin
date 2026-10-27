@@ -52,6 +52,12 @@ public final class Scheduler {
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, scheduled -> task.run(), delay);
     }
 
+    /** Runs {@code task} on the global region every {@code periodTicks}, first after one period. */
+    public static void runGlobalTimer(SellPlugin plugin, Runnable task, long periodTicks) {
+        long period = Math.max(1L, periodTicks);
+        Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, scheduled -> task.run(), period, period);
+    }
+
     /** Runs {@code task} on the global region as soon as possible. */
     public static void runGlobal(SellPlugin plugin, Runnable task) {
         Bukkit.getGlobalRegionScheduler().run(plugin, scheduled -> task.run());

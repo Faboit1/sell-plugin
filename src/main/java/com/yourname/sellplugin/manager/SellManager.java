@@ -9,6 +9,7 @@ import org.bukkit.Sound;
 import org.bukkit.block.ShulkerBox;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
@@ -155,15 +156,53 @@ public class SellManager {
             return new SellResult(0, 0, false);
         }
 
+        int storageSize = player.getInventory().getStorageContents().length;
+        SaleTally tally = sellSlots(player, player.getInventory(), storageSize, categoryFilter, itemKeyFilter);
+        return finalizeSell(player, tally);
+    }
+
+    // ---------------------------------------------------------------
+    // Sell everything in a placed container (the sell axe)
+    // ---------------------------------------------------------------
+
+    /**
+     * Sells every sellable stack in a chest, barrel or placed shulker box,
+     * diving into shulker boxes stored inside it. Whatever the shop does not
+     * buy stays where it was.
+     */
+    public SellResult sellContainer(Player player, Inventory inventory) {
+        if (!plugin.getEconomyManager().isAvailable()) {
+            player.sendMessage(plugin.getConfigManager().getMessage("economy-error"));
+            return new SellResult(0, 0, false);
+        }
+
+        SaleTally tally = sellSlots(player, inventory, inventory.getSize(), null, null);
+        if (tally.totalEarned() <= 0) {
+            player.sendMessage(plugin.getConfigManager().getMessage("nothing-in-container"));
+            return new SellResult(0, 0, false);
+        }
+        return finalizeSell(player, tally);
+    }
+
+    /**
+     * Sells the first {@code size} slots of {@code inventory}, optionally
+     * narrowed to a category or item key, writing any remainder back in place.
+     */
+    private SaleTally sellSlots(Player player, Inventory inventory, int size,
+                                String categoryFilter, String itemKeyFilter) {
         SaleTally tally = new SaleTally();
 
-        int storageSize = player.getInventory().getStorageContents().length;
-        for (int i = 0; i < storageSize; i++) {
-            ItemStack item = player.getInventory().getItem(i);
+        for (int i = 0; i < size; i++) {
+            ItemStack item = inventory.getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
 
+            int slot = i;
             if (sellShulker(item)) {
-                tally.add(sellShulkerContents(player, item, categoryFilter, itemKeyFilter));
+                SaleTally inner = sellShulkerContents(player, item, categoryFilter, itemKeyFilter);
+                // The shulker's new contents live in its meta; put the stack
+                // back so a copied (rather than mirrored) stack still lands.
+                if (inner.items > 0) inventory.setItem(slot, item);
+                tally.add(inner);
                 continue;
             }
 
@@ -172,11 +211,9 @@ public class SellManager {
             if (itemKeyFilter != null && !itemKeyFilter.equalsIgnoreCase(key)) continue;
             if (categoryFilter != null && !categoryFilter.equalsIgnoreCase(plugin.getPriceManager().getCategory(key))) continue;
 
-            int slot = i;
-            tally.add(sellStackAt(player, item, key, replacement -> player.getInventory().setItem(slot, replacement)));
+            tally.add(sellStackAt(player, item, key, replacement -> inventory.setItem(slot, replacement)));
         }
-
-        return finalizeSell(player, tally);
+        return tally;
     }
 
     // ---------------------------------------------------------------

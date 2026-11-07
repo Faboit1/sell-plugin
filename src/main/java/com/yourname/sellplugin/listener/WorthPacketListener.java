@@ -60,7 +60,7 @@ public class WorthPacketListener {
                 if (!worthAllowedFor(viewer)) return;
 
                 Inventory top = viewer.getOpenInventory().getTopInventory();
-                InventoryHolder holder = top.getHolder();
+                InventoryHolder holder = safeGetHolder(top);
                 boolean pluginGui = isPluginGui(holder);
                 int topSize = top.getSize();
 
@@ -285,7 +285,12 @@ public class WorthPacketListener {
      */
     private boolean worthAllowedFor(Player viewer) {
         if (!plugin.getConfigManager().isWorthEnabled()) return false;
-        if (!plugin.getWorthVisibilityManager().isVisible(viewer.getUniqueId())) return false;
+        try {
+            if (!plugin.getWorthVisibilityManager().isVisible(viewer.getUniqueId())) return false;
+        } catch (UnsupportedOperationException ignored) {
+            // temporary (login-phase) players have no UUID
+            return false;
+        }
         if (viewer.getGameMode() == GameMode.CREATIVE
                 && !plugin.getConfigManager().isWorthShownInCreative()) return false;
         return true;
@@ -307,9 +312,21 @@ public class WorthPacketListener {
         return -1;
     }
 
+    /**
+     * Inventory#getHolder() may touch world state; from the async packet thread on Folia that
+     * throws "Cannot read world asynchronously". Treat that as "no holder" instead of crashing.
+     */
+    private static InventoryHolder safeGetHolder(Inventory inv) {
+        try {
+            return inv.getHolder();
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
     private boolean shouldDecorate(Player player) {
         Inventory topInventory = player.getOpenInventory().getTopInventory();
-        InventoryHolder holder = topInventory.getHolder();
+        InventoryHolder holder = safeGetHolder(topInventory);
 
         if (isPluginGui(holder)) return false;
 
